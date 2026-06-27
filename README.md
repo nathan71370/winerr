@@ -20,3 +20,5 @@ pnpm test
 
 ## Deploy
 Built as a Docker image and run via Docker Compose (`docker-compose.yml`), managed through Komodo. See `docs/superpowers/` for the design spec and implementation plan.
+
+On first deploy, apply the schema once with `pnpm db:migrate` against the database before using the app (an automatic boot-time migration step is planned for Phase 2).

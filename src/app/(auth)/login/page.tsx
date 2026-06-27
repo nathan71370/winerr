@@ -1,7 +1,14 @@
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth/config";
+import { inputStyle, btnStyle } from "../_styles";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   async function login(formData: FormData) {
     "use server";
     try {
@@ -22,6 +29,7 @@ export default function LoginPage() {
       <form action={login} style={{ display: "grid", gap: "var(--s-3)", marginTop: "var(--s-6)" }}>
         <input name="email" type="email" placeholder="Email" required style={inputStyle} />
         <input name="password" type="password" placeholder="Mot de passe" required style={inputStyle} />
+        {error && <p style={{ color: "var(--warn)", fontSize: "var(--t-small)" }}>Identifiants invalides.</p>}
         <button style={btnStyle}>Entrer</button>
       </form>
       <p style={{ marginTop: "var(--s-4)", fontSize: "var(--t-small)" }}>
@@ -30,12 +38,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "var(--s-3)", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)",
-  background: "var(--card)", fontSize: "var(--t-body)",
-};
-const btnStyle: React.CSSProperties = {
-  padding: "var(--s-3)", border: "none", borderRadius: "var(--radius-pill)",
-  background: "var(--accent)", color: "#fff", fontSize: "var(--t-body)", cursor: "pointer",
-};
