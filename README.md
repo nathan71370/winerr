@@ -9,7 +9,7 @@ Next.js 16 (App Router, standalone) · PostgreSQL · Drizzle ORM · Auth.js · V
 ```bash
 pnpm install
 cp .env.example .env   # then fill in values
-pnpm db:migrate        # requires a running Postgres (see docker-compose.yml)
+pnpm db:migrate        # requires a running Postgres (see compose.yaml)
 pnpm dev
 ```
 
@@ -19,6 +19,6 @@ pnpm test
 ```
 
 ## Deploy
-Built as a Docker image and run via Docker Compose (`docker-compose.yml`), managed through Komodo. See `docs/superpowers/` for the design spec and implementation plan.
+Built as a Docker image and run via Docker Compose (`compose.yaml`), managed through Komodo. Point a Komodo Stack at this repo — it reads `compose.yaml` by default. See `docs/superpowers/` for the design spec and implementation plan.
 
 On first deploy, apply the schema once with `pnpm db:migrate` against the database before using the app (an automatic boot-time migration step is planned for Phase 2).
