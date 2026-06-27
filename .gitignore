@@ -9,6 +9,8 @@ node_modules/
 dist/
 out/
 build/
+next-env.d.ts
+tsconfig.tsbuildinfo
 
 # Env
 .env
