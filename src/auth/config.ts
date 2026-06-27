@@ -11,6 +11,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/login" },
   providers: [
     Credentials({
+      // descriptors unused — /login provides its own form UI
       credentials: { email: {}, password: {} },
       authorize: async (raw) => {
         const parsed = loginSchema.safeParse(raw);

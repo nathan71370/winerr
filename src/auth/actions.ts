@@ -23,7 +23,14 @@ export async function registerAction(_prev: unknown, formData: FormData) {
   if (existing) return { error: "Un compte existe déjà avec cet email." };
 
   const passwordHash = await hashPassword(password);
-  await db.insert(users).values({ email, name, passwordHash });
+  try {
+    await db.insert(users).values({ email, name, passwordHash });
+  } catch (e) {
+    if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505") {
+      return { error: "Un compte existe déjà avec cet email." };
+    }
+    throw e;
+  }
 
   await signIn("credentials", { email, password, redirect: false });
   redirect("/cellar");
