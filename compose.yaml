@@ -1,8 +1,9 @@
 services:
   app:
     build: .
-    ports:
-      - "3000:3000"
+    networks:
+      - default
+      - traefik
     environment:
       DATABASE_URL: postgres://winerr:${POSTGRES_PASSWORD}@db:5432/winerr
       AUTH_SECRET: ${AUTH_SECRET}
@@ -22,6 +23,12 @@ services:
       retries: 5
       start_period: 40s
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.winerr.entrypoints=websecure"
+      - "traefik.http.routers.winerr.tls=true"
+      - "traefik.http.routers.winerr.rule=Host(`winerr.limperiam.com`)"
+      - "traefik.http.services.winerr.loadbalancer.server.port=3000"
 
   db:
     image: postgres:16-alpine
@@ -43,3 +50,8 @@ services:
 
 volumes:
   winerr_pgdata:
+
+networks:
+  default:
+  traefik:
+    external: true
