@@ -9,7 +9,12 @@ services:
       AUTH_TRUST_HOST: "true"
     depends_on:
       db:
-        condition: service_healthy
+        # service_started (not service_healthy): the health-gate is only honored
+        # by `docker compose up` and leaves the app stuck in "Created" under some
+        # orchestrators (e.g. Komodo). The app tolerates the DB not being ready —
+        # the Postgres connection is lazy and /login needs no DB — so ordering by
+        # container start is enough.
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
       interval: 10s
