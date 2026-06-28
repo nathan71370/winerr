@@ -28,8 +28,12 @@ export async function listCellar(userId: string) {
 
 // Name-search over the LWIN reference (autocomplete for the add form).
 export async function searchWines(query: string, limit = 10) {
-  const q = `%${query}%`;
-  if (query.trim().length < 2) return [];
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+  // Escape LIKE metacharacters (\ % _) so user input can't act as a wildcard,
+  // and cap length to avoid pathological patterns.
+  const escaped = trimmed.slice(0, 100).replace(/[\\%_]/g, (c) => `\\${c}`);
+  const q = `%${escaped}%`;
   return db
     .select({
       lwin: lwinWines.lwin,
