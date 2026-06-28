@@ -4,6 +4,7 @@ import { listCellar } from "@/cellar/queries";
 import { deleteBottleAction, markDrunkAction } from "@/cellar/actions";
 import { filterAndSort, filterOptions, type CellarParams } from "@/cellar/filters";
 import { drinkStatus } from "@/cellar/drink-status";
+import { RowRating } from "@/cellar/RowRating";
 
 export default async function CellarPage({
   searchParams,
@@ -56,6 +57,7 @@ export default async function CellarPage({
           <option value="vintage">Millésime</option>
           <option value="drink">À boire avant</option>
           <option value="price">Prix</option>
+          <option value="rating">Note</option>
         </select>
         <button style={{ ...ctrl, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}>Filtrer</button>
       </form>
@@ -86,6 +88,9 @@ export default async function CellarPage({
                       {ds.label}
                     </span>
                   )}
+                  <div style={{ marginTop: 6 }}>
+                    <RowRating wineId={b.wineId} value={b.rating != null ? Number(b.rating) : null} />
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
                   {b.status === "in_cellar" && (

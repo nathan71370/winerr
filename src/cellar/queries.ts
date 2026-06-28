@@ -1,8 +1,8 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
-import { cellarItems, wines, lwinWines } from "@/db/schema";
+import { cellarItems, wines, lwinWines, reviews } from "@/db/schema";
 
-// The user's bottles (default: in cellar), joined to their wine.
+// The user's bottles (default: in cellar), joined to their wine and review.
 export async function listCellar(userId: string) {
   return db
     .select({
@@ -19,9 +19,11 @@ export async function listCellar(userId: string) {
       color: wines.color,
       drinkFrom: wines.drinkFrom,
       drinkTo: wines.drinkTo,
+      rating: reviews.rating,
     })
     .from(cellarItems)
     .innerJoin(wines, eq(cellarItems.wineId, wines.id))
+    .leftJoin(reviews, and(eq(reviews.wineId, wines.id), eq(reviews.userId, cellarItems.userId)))
     .where(eq(cellarItems.userId, userId))
     .orderBy(desc(cellarItems.createdAt));
 }
@@ -56,5 +58,11 @@ export async function getWineWithBottles(userId: string, wineId: string) {
     .select()
     .from(cellarItems)
     .where(and(eq(cellarItems.userId, userId), eq(cellarItems.wineId, wineId)));
-  return { wine, bottles };
+  const review =
+    (await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.userId, userId), eq(reviews.wineId, wineId)))
+      .limit(1))[0] ?? null;
+  return { wine, bottles, review };
 }

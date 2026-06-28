@@ -67,7 +67,9 @@ export const reviews = pgTable("reviews", {
   tastingNote: text("tasting_note"),
   tastedAt: date("tasted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  uniqUserWine: unique("uniq_user_wine").on(t.userId, t.wineId),
+}));
 
 export const priceSnapshots = pgTable("price_snapshots", {
   id: uuid("id").primaryKey().defaultRandom(),
