@@ -39,6 +39,11 @@ export default async function CellarPage() {
                   {b.region ?? "—"} · {b.color ?? "—"} · ×{b.quantity}
                   {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
                 </div>
+                {b.drinkFrom && b.drinkTo && (
+                  <div style={{ color: "var(--sage)", fontSize: "var(--t-meta)", marginTop: 2 }}>
+                    À boire {b.drinkFrom}–{b.drinkTo}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
                 <form action={markDrunkAction}>

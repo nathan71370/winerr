@@ -8,6 +8,7 @@ import { cellarItems } from "@/db/schema";
 import { auth } from "@/auth/config";
 import { addBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
+import { refreshDrinkWindow } from "@/catalog/drink-window";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -40,6 +41,9 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     purchasePrice: d.purchasePrice != null ? String(d.purchasePrice) : null,
     purchaseDate: new Date().toISOString().slice(0, 10), // today
   });
+  // Fire-and-forget: estimate the drink window for this wine if not cached.
+  // refreshDrinkWindow never throws; we intentionally don't await it.
+  void refreshDrinkWindow(wineId);
   revalidatePath("/cellar");
   redirect("/cellar");
 }
