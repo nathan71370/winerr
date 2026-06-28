@@ -21,10 +21,28 @@ export const wines = pgTable("wines", {
   color: wineColor("color"),
   grapes: text("grapes"),
   refLabelImage: text("ref_label_image"),
+  lwinCode: text("lwin_code"),
+  drinkFrom: integer("drink_from"),
+  drinkTo: integer("drink_to"),
+  drinkWindowConfidence: numeric("drink_window_confidence", { precision: 3, scale: 2 }),
+  drinkWindowSource: text("drink_window_source"),
+  drinkWindowFetchedAt: timestamp("drink_window_fetched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
   uniqWine: unique("uniq_wine").on(t.producer, t.cuvee, t.vintage),
 }));
+
+export const lwinWines = pgTable("lwin_wines", {
+  lwin: text("lwin").primaryKey(),
+  displayName: text("display_name"),
+  producer: text("producer"),
+  wine: text("wine"),
+  region: text("region"),
+  country: text("country"),
+  colour: text("colour"),
+  type: text("type"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
 export const cellarItems = pgTable("cellar_items", {
   id: uuid("id").primaryKey().defaultRandom(),
