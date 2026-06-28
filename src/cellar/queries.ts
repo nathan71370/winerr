@@ -58,5 +58,11 @@ export async function getWineWithBottles(userId: string, wineId: string) {
     .select()
     .from(cellarItems)
     .where(and(eq(cellarItems.userId, userId), eq(cellarItems.wineId, wineId)));
-  return { wine, bottles };
+  const review =
+    (await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.userId, userId), eq(reviews.wineId, wineId)))
+      .limit(1))[0] ?? null;
+  return { wine, bottles, review };
 }
