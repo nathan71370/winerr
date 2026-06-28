@@ -9,6 +9,16 @@ import { loginSchema } from "@/lib/validation";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (token.id && session.user) session.user.id = token.id as string;
+      return session;
+    },
+  },
   providers: [
     Credentials({
       // descriptors unused — /login provides its own form UI
