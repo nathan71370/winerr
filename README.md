@@ -22,3 +22,8 @@ pnpm test
 Built as a Docker image and run via Docker Compose (`compose.yaml`), managed through Komodo. Point a Komodo Stack at this repo — it reads `compose.yaml` by default. See `docs/superpowers/` for the design spec and implementation plan.
 
 On first deploy, apply the schema once with `pnpm db:migrate` against the database before using the app (an automatic boot-time migration step is planned for Phase 2).
+
+## AI (optional)
+Photo label identification and drink-window estimates use Google Gemini. Set
+`GEMINI_API_KEY` (free tier from Google AI Studio) in the Stack environment to
+enable them. Without a key, the app still works for manual entry and name search.
