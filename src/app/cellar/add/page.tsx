@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { addBottleAction } from "@/cellar/actions";
 import { searchWinesAction } from "./search-action";
+import { identifyLabelAction } from "@/cellar/add/identify-action";
 
 type Suggestion = {
   lwin: string; displayName: string | null; producer: string | null;
@@ -16,6 +17,8 @@ const colourToColor: Record<string, string> = {
 export default function AddBottlePage() {
   const [state, action, pending] = useActionState(addBottleAction, null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [identifying, setIdentifying] = useState(false);
+  const [identifyMsg, setIdentifyMsg] = useState<string | null>(null);
   const [form, setForm] = useState({
     producer: "", cuvee: "", vintage: "", region: "", country: "",
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
@@ -39,9 +42,56 @@ export default function AddBottlePage() {
     setSuggestions([]);
   }
 
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onPhoto(file: File | undefined) {
+    if (!file) return;
+    setIdentifyMsg(null);
+    setIdentifying(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await identifyLabelAction(base64, file.type);
+      if ("error" in res) {
+        setIdentifyMsg(res.error);
+        return;
+      }
+      const e = res.extraction;
+      setForm((f) => ({
+        ...f,
+        producer: e.producer ?? f.producer,
+        cuvee: e.cuvee ?? "",
+        vintage: e.vintage != null ? String(e.vintage) : "",
+        region: e.region ?? "",
+        country: e.country ?? "",
+        color: e.color ?? "rouge",
+        grapes: e.grapes ?? "",
+        lwinCode: "",
+      }));
+      setSuggestions([]);
+      setIdentifyMsg(`Identifié (confiance ${(e.confidence * 100).toFixed(0)} %) — vérifie et corrige si besoin.`);
+    } finally {
+      setIdentifying(false);
+    }
+  }
+
   return (
     <main style={{ maxWidth: 520, margin: "0 auto", padding: "var(--s-7) var(--s-5)" }}>
       <h1 style={{ fontSize: "var(--t-h1)" }}>Ajouter une bouteille</h1>
+      <div style={{ marginTop: "var(--s-4)", padding: "var(--s-4)", border: "1px dashed var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
+        <label style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", cursor: "pointer" }}>
+          📷 {identifying ? "Identification…" : "Photographier l'étiquette"}
+          <input type="file" accept="image/*" capture="environment" disabled={identifying}
+            onChange={(ev) => onPhoto(ev.target.files?.[0])} style={{ display: "block", marginTop: "var(--s-2)", fontSize: "var(--t-small)" }} />
+        </label>
+        {identifyMsg && <p style={{ marginTop: "var(--s-2)", fontSize: "var(--t-meta)", color: "var(--ink-mute)" }}>{identifyMsg}</p>}
+      </div>
       <form action={action} style={{ display: "grid", gap: "var(--s-3)", marginTop: "var(--s-6)" }}>
         <label style={lbl}>Domaine
           <input name="producer" value={form.producer} required autoComplete="off"
