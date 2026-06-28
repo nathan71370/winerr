@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed:lwin": "tsx scripts/seed-lwin.ts"
+    "db:seed:lwin": "tsx scripts/seed-lwin.ts",
+    "db:seed:winemag": "tsx scripts/seed-winemag.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
