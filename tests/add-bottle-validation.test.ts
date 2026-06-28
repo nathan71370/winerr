@@ -24,4 +24,19 @@ describe("addBottleSchema", () => {
   it("rejects an out-of-range color", () => {
     expect(addBottleSchema.safeParse({ ...base, color: "purple" }).success).toBe(false);
   });
+  it("treats a blank purchasePrice as undefined, not 0", () => {
+    const r = addBottleSchema.safeParse({ ...base, purchasePrice: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.purchasePrice).toBeUndefined();
+  });
+  it("defaults a blank quantity to 1", () => {
+    const r = addBottleSchema.safeParse({ producer: "X", color: "rouge", quantity: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.quantity).toBe(1);
+  });
+  it("treats a blank vintage as undefined", () => {
+    const r = addBottleSchema.safeParse({ ...base, vintage: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.vintage).toBeUndefined();
+  });
 });
