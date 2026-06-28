@@ -2,6 +2,7 @@ import { auth } from "@/auth/config";
 import { redirect, notFound } from "next/navigation";
 import { getWineWithBottles } from "@/cellar/queries";
 import { drinkStatus } from "@/cellar/drink-status";
+import { ReviewForm } from "./ReviewForm";
 
 export default async function WinePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -9,7 +10,7 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const data = await getWineWithBottles(session.user.id, id);
   if (!data) notFound();
-  const { wine, bottles } = data;
+  const { wine, bottles, review } = data;
   const ds = drinkStatus(wine.drinkFrom, wine.drinkTo, new Date().getFullYear());
 
   return (
@@ -37,6 +38,16 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
         ) : (
           <div style={{ marginTop: "var(--s-2)", color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>—</div>
         )}
+      </div>
+
+      <h2 style={{ fontSize: "var(--t-h3)", marginTop: "var(--s-6)" }}>Mon avis</h2>
+      <div style={{ marginTop: "var(--s-3)" }}>
+        <ReviewForm
+          wineId={wine.id}
+          initialRating={review?.rating != null ? Number(review.rating) : null}
+          initialNote={review?.tastingNote ?? ""}
+          initialDate={review?.tastedAt ?? new Date().toISOString().slice(0, 10)}
+        />
       </div>
 
       <h2 style={{ fontSize: "var(--t-h3)", marginTop: "var(--s-6)" }}>Mes bouteilles</h2>
