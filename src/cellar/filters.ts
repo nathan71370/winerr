@@ -10,6 +10,7 @@ export type CellarBottle = {
   status: "in_cellar" | "drunk";
   drinkFrom: number | null;
   drinkTo: number | null;
+  rating: string | null;
   wineId: string;
   purchaseDate: string | null;
 };
@@ -18,7 +19,7 @@ export type CellarParams = {
   color?: string;
   region?: string;
   status?: "in_cellar" | "drunk";
-  sort?: "name" | "vintage" | "drink" | "recent" | "price";
+  sort?: "name" | "vintage" | "drink" | "recent" | "price" | "rating";
 };
 
 // Pure filter + sort over the user's bottles. Defaults: in-cellar, newest-first.
@@ -35,6 +36,7 @@ export function filterAndSort(rows: CellarBottle[], params: CellarParams): Cella
     drink: (a, b) => (a.drinkTo ?? 9999) - (b.drinkTo ?? 9999),
     price: (a, b) => Number(b.purchasePrice ?? 0) - Number(a.purchasePrice ?? 0),
     recent: (a, b) => (b.purchaseDate ?? "").localeCompare(a.purchaseDate ?? ""),
+    rating: (a, b) => Number(b.rating ?? -1) - Number(a.rating ?? -1),
   };
   return [...out].sort(cmp[sort] ?? cmp.recent);
 }
