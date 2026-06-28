@@ -108,8 +108,8 @@ export default function AddBottlePage() {
       <h1 style={{ fontSize: "var(--t-h1)" }}>Ajouter une bouteille</h1>
       <div style={{ marginTop: "var(--s-4)", padding: "var(--s-4)", border: "1px dashed var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
         <label style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", cursor: "pointer" }}>
-          📷 {identifying ? "Identification…" : "Photographier l'étiquette"}
-          <input type="file" accept="image/*" capture="environment" disabled={identifying}
+          📷 {identifying ? "Identification…" : "Photo de l'étiquette (appareil ou galerie)"}
+          <input type="file" accept="image/*" disabled={identifying}
             onChange={(ev) => onPhoto(ev.target.files?.[0])} style={{ display: "block", marginTop: "var(--s-2)", fontSize: "var(--t-small)" }} />
         </label>
         {identifyMsg && <p style={{ marginTop: "var(--s-2)", fontSize: "var(--t-meta)", color: "var(--ink-mute)" }}>{identifyMsg}</p>}

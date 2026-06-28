@@ -37,23 +37,39 @@ export function createGeminiProvider(opts: {
   apiKey: string;
   model?: string;
   fetchFn?: FetchFn;
+  maxRetries?: number;
+  retryDelayMs?: number;
 }): AIProvider {
   const model = opts.model ?? "gemini-2.0-flash";
   const doFetch = opts.fetchFn ?? fetch;
+  const maxRetries = opts.maxRetries ?? 2;
+  const retryDelayMs = opts.retryDelayMs ?? 1500;
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   async function call(body: unknown): Promise<unknown> {
-    const res = await doFetch(`${ENDPOINT}/${model}:generateContent?key=${opts.apiKey}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`Gemini error ${res.status}`);
-    const json = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error("Gemini: empty response");
-    return JSON.parse(text);
+    // Retry transient errors (429 rate-limit, 503 overloaded) with linear
+    // backoff. Exhausted free-tier daily quota still 429s past the retries.
+    for (let attempt = 0; ; attempt++) {
+      const res = await doFetch(`${ENDPOINT}/${model}:generateContent?key=${opts.apiKey}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] } }[];
+        };
+        const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error("Gemini: empty response");
+        return JSON.parse(text);
+      }
+      if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+        await sleep(retryDelayMs * (attempt + 1));
+        continue;
+      }
+      throw new Error(`Gemini error ${res.status}`);
+    }
   }
 
   return {

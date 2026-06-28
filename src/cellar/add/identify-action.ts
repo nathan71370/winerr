@@ -25,6 +25,10 @@ export async function identifyLabelAction(
     return { extraction };
   } catch (e) {
     console.error("[identify] failed", e);
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("429")) {
+      return { error: "Quota IA atteint (limite du palier gratuit). Réessaie dans un moment, ou saisis manuellement." };
+    }
     return { error: "Identification échouée. Saisis manuellement." };
   }
 }

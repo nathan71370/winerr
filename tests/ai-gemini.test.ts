@@ -27,9 +27,20 @@ describe("createGeminiProvider.identifyLabel", () => {
     expect(body.contents[0].parts.some((pt: { inlineData?: unknown }) => pt.inlineData)).toBe(true);
   });
 
-  it("throws on a non-ok response", async () => {
-    const p = createGeminiProvider({ apiKey: "K", fetchFn: fakeFetch({}, false, 429) });
+  it("throws on a non-ok response (no retries)", async () => {
+    const p = createGeminiProvider({ apiKey: "K", fetchFn: fakeFetch({}, false, 429), maxRetries: 0 });
     await expect(p.identifyLabel("x", "image/jpeg")).rejects.toThrow();
+  });
+
+  it("retries a 429 then succeeds", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({}) } as unknown as Response)
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => labelPayload } as unknown as Response);
+    const p = createGeminiProvider({ apiKey: "K", fetchFn, maxRetries: 2, retryDelayMs: 0 });
+    const out = await p.identifyLabel("x", "image/jpeg");
+    expect(out.producer).toBe("Château Margaux");
+    expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 });
 
