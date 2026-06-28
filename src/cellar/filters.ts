@@ -34,7 +34,7 @@ export function filterAndSort(rows: CellarBottle[], params: CellarParams): Cella
     vintage: (a, b) => (a.vintage ?? 0) - (b.vintage ?? 0),
     drink: (a, b) => (a.drinkTo ?? 9999) - (b.drinkTo ?? 9999),
     price: (a, b) => Number(b.purchasePrice ?? 0) - Number(a.purchasePrice ?? 0),
-    recent: (a, b) => (a.purchaseDate ?? "").localeCompare(b.purchaseDate ?? ""),
+    recent: (a, b) => (b.purchaseDate ?? "").localeCompare(a.purchaseDate ?? ""),
   };
   return [...out].sort(cmp[sort] ?? cmp.recent);
 }

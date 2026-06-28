@@ -10,7 +10,10 @@ const rows: CellarBottle[] = [
 describe("filterAndSort", () => {
   it("defaults to in-cellar only", () => {
     const r = filterAndSort(rows, {});
-    expect(r.map((b) => b.itemId)).toEqual(["1", "2"]);
+    expect(r.map((b) => b.itemId).sort()).toEqual(["1", "2"]);
+  });
+  it("defaults to newest purchase first", () => {
+    expect(filterAndSort(rows, {}).map((b) => b.itemId)).toEqual(["2", "1"]);
   });
   it("filters by color", () => {
     expect(filterAndSort(rows, { color: "blanc" }).map((b) => b.itemId)).toEqual(["2"]);
