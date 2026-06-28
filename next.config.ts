@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // Keep the Postgres driver external (not bundled) so its Node built-in
   // imports (crypto/net/tls) resolve at runtime instead of being bundled.
   serverExternalPackages: ["postgres"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
+  },
 };
 
 export default nextConfig;

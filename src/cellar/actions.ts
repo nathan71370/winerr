@@ -8,6 +8,7 @@ import { cellarItems } from "@/db/schema";
 import { auth } from "@/auth/config";
 import { addBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
+import { refreshDrinkWindow } from "@/catalog/drink-window";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -40,6 +41,14 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     purchasePrice: d.purchasePrice != null ? String(d.purchasePrice) : null,
     purchaseDate: new Date().toISOString().slice(0, 10), // today
   });
+  // Fire-and-forget: estimate the drink window for this wine if not cached.
+  // refreshDrinkWindow never throws; we intentionally don't await it so the
+  // redirect isn't blocked. This relies on a long-lived Node process (Docker/
+  // Komodo) keeping the async chain alive after the response — it is NOT
+  // serverless-safe. If the process restarts mid-estimate, the window stays
+  // null and is recomputed on the next add of the same wine (a 2C backfill
+  // sweep is the proper home for stragglers).
+  void refreshDrinkWindow(wineId);
   revalidatePath("/cellar");
   redirect("/cellar");
 }
