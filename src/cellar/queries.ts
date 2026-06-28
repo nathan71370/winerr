@@ -22,7 +22,7 @@ export async function listCellar(userId: string) {
     })
     .from(cellarItems)
     .innerJoin(wines, eq(cellarItems.wineId, wines.id))
-    .where(and(eq(cellarItems.userId, userId), eq(cellarItems.status, "in_cellar")))
+    .where(eq(cellarItems.userId, userId))
     .orderBy(desc(cellarItems.createdAt));
 }
 

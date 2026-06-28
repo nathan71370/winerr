@@ -2,14 +2,31 @@ import { auth, signOut } from "@/auth/config";
 import { redirect } from "next/navigation";
 import { listCellar } from "@/cellar/queries";
 import { deleteBottleAction, markDrunkAction } from "@/cellar/actions";
+import { filterAndSort, filterOptions, type CellarParams } from "@/cellar/filters";
+import { drinkStatus } from "@/cellar/drink-status";
 
-export default async function CellarPage() {
+export default async function CellarPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
-  const bottles = await listCellar(session.user.id);
+  const sp = await searchParams;
+  const params: CellarParams = {
+    color: sp.color || undefined,
+    region: sp.region || undefined,
+    status: sp.status === "drunk" ? "drunk" : "in_cellar",
+    sort: (sp.sort as CellarParams["sort"]) || "recent",
+  };
+
+  const all = await listCellar(session.user.id);
+  const bottles = filterAndSort(all, params);
+  const options = filterOptions(all);
+  const year = new Date().getFullYear();
 
   return (
-    <main style={{ maxWidth: 760, margin: "0 auto", padding: "var(--s-7) var(--s-5)" }}>
+    <main style={{ maxWidth: 820, margin: "0 auto", padding: "var(--s-7) var(--s-5)" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1 style={{ fontSize: "var(--t-h1)" }}>Ma cave</h1>
         <div style={{ display: "flex", gap: "var(--s-4)", alignItems: "baseline" }}>
@@ -20,47 +37,76 @@ export default async function CellarPage() {
         </div>
       </header>
 
+      <form method="get" style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", marginTop: "var(--s-5)" }}>
+        <select name="status" defaultValue={params.status} style={ctrl}>
+          <option value="in_cellar">En cave</option>
+          <option value="drunk">Bues</option>
+        </select>
+        <select name="color" defaultValue={params.color ?? ""} style={ctrl}>
+          <option value="">Toutes couleurs</option>
+          {options.colors.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select name="region" defaultValue={params.region ?? ""} style={ctrl}>
+          <option value="">Toutes régions</option>
+          {options.regions.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select name="sort" defaultValue={params.sort} style={ctrl}>
+          <option value="recent">Récents</option>
+          <option value="name">Nom</option>
+          <option value="vintage">Millésime</option>
+          <option value="drink">À boire avant</option>
+          <option value="price">Prix</option>
+        </select>
+        <button style={{ ...ctrl, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}>Filtrer</button>
+      </form>
+
       {bottles.length === 0 ? (
         <div style={{ marginTop: "var(--s-8)", textAlign: "center", padding: "var(--s-8)", border: "1px dashed var(--line)", borderRadius: "var(--radius-lg)", background: "var(--card)" }}>
-          <p style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h2)" }}>Ta cave est vide</p>
+          <p style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h2)" }}>Aucune bouteille</p>
           <p style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)", marginTop: "var(--s-2)" }}>
-            <a href="/cellar/add">Ajoute ta première bouteille</a>.
+            <a href="/cellar/add">Ajoute une bouteille</a>.
           </p>
         </div>
       ) : (
-        <ul style={{ listStyle: "none", marginTop: "var(--s-6)", display: "grid", gap: "var(--s-3)" }}>
-          {bottles.map((b) => (
-            <li key={b.itemId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--s-4)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
-              <div>
-                <div style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h3)" }}>
-                  {b.producer}{b.cuvee ? ` · ${b.cuvee}` : ""}{b.vintage ? ` ${b.vintage}` : ""}
-                </div>
-                <div style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>
-                  {b.region ?? "—"} · {b.color ?? "—"} · ×{b.quantity}
-                  {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
-                </div>
-                {b.drinkFrom && b.drinkTo && (
-                  <div style={{ color: "var(--sage)", fontSize: "var(--t-meta)", marginTop: 2 }}>
-                    À boire {b.drinkFrom}–{b.drinkTo}
+        <ul style={{ listStyle: "none", marginTop: "var(--s-5)", display: "grid", gap: "var(--s-3)" }}>
+          {bottles.map((b) => {
+            const ds = drinkStatus(b.drinkFrom, b.drinkTo, year);
+            return (
+              <li key={b.itemId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--s-4)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
+                <div>
+                  <a href={`/wine/${b.wineId}`} style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h3)", color: "var(--ink)" }}>
+                    {b.producer}{b.cuvee ? ` · ${b.cuvee}` : ""}{b.vintage ? ` ${b.vintage}` : ""}
+                  </a>
+                  <div style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>
+                    {b.region ?? "—"} · {b.color ?? "—"} · ×{b.quantity}
+                    {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
                   </div>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
-                <form action={markDrunkAction}>
-                  <input type="hidden" name="itemId" value={b.itemId} />
-                  <button style={miniBtn}>Bue −1</button>
-                </form>
-                <form action={deleteBottleAction}>
-                  <input type="hidden" name="itemId" value={b.itemId} />
-                  <button style={{ ...miniBtn, color: "var(--warn)" }}>Suppr.</button>
-                </form>
-              </div>
-            </li>
-          ))}
+                  {ds && (
+                    <span style={{ display: "inline-block", marginTop: 4, fontSize: "var(--t-meta)", color: "#fff", background: ds.color, padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>
+                      {ds.label}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
+                  {b.status === "in_cellar" && (
+                    <form action={markDrunkAction}>
+                      <input type="hidden" name="itemId" value={b.itemId} />
+                      <button style={miniBtn}>Bue −1</button>
+                    </form>
+                  )}
+                  <form action={deleteBottleAction}>
+                    <input type="hidden" name="itemId" value={b.itemId} />
+                    <button style={{ ...miniBtn, color: "var(--warn)" }}>Suppr.</button>
+                  </form>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>
   );
 }
 
+const ctrl: React.CSSProperties = { padding: "var(--s-2) var(--s-3)", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)", background: "var(--card)", fontSize: "var(--t-small)" };
 const miniBtn: React.CSSProperties = { background: "none", border: "1px solid var(--line)", borderRadius: "var(--radius-pill)", padding: "var(--s-1) var(--s-3)", fontSize: "var(--t-meta)", cursor: "pointer", color: "var(--ink-soft)" };
