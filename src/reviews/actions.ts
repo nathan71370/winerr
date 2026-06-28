@@ -36,9 +36,9 @@ export async function upsertRatingAction(wineId: string, rating: number): Promis
 // Full review from the wine-detail form (stars + note + date).
 export async function upsertReviewAction(formData: FormData): Promise<void> {
   const userId = await requireUserId();
-  const wineId = String(formData.get("wineId"));
+  const wineId = formData.get("wineId") as string | null;
   const rawRating = Number(formData.get("rating"));
-  if (!wineId || !rawRating) return; // no rating → nothing to save
+  if (!wineId || !rawRating) return; // missing wine or no rating → nothing to save
   const rating = snapRating(rawRating);
   const tastingNote = (formData.get("tastingNote") as string) || null;
   const tastedAt = (formData.get("tastedAt") as string) || today();
