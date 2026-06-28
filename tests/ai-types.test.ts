@@ -23,6 +23,14 @@ describe("labelExtractionSchema", () => {
     });
     expect(r.success).toBe(false);
   });
+  it("accepts a confidence-only response and defaults the rest to null", () => {
+    const r = labelExtractionSchema.safeParse({ confidence: 0.6 });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.producer).toBeNull();
+      expect(r.data.color).toBeNull();
+    }
+  });
 });
 
 describe("drinkWindowSchema", () => {

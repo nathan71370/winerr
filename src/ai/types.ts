@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 export const labelExtractionSchema = z.object({
-  producer: z.string().nullable(),
-  cuvee: z.string().nullable(),
-  vintage: z.number().int().nullable(),
-  region: z.string().nullable(),
-  country: z.string().nullable(),
-  color: z.enum(["rouge", "blanc", "rose", "effervescent"]).nullable(),
-  grapes: z.string().nullable(),
+  producer: z.string().nullable().optional().default(null),
+  cuvee: z.string().nullable().optional().default(null),
+  vintage: z.number().int().nullable().optional().default(null),
+  region: z.string().nullable().optional().default(null),
+  country: z.string().nullable().optional().default(null),
+  color: z.enum(["rouge", "blanc", "rose", "effervescent"]).nullable().optional().default(null),
+  grapes: z.string().nullable().optional().default(null),
   confidence: z.number().min(0).max(1),
 });
 export type LabelExtraction = z.infer<typeof labelExtractionSchema>;

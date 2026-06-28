@@ -42,10 +42,32 @@ export default function AddBottlePage() {
     setSuggestions([]);
   }
 
-  function fileToBase64(file: File): Promise<string> {
+  // Downscale to a max dimension and re-encode as JPEG so the base64 payload
+  // stays small (label OCR doesn't need full res; also faster/cheaper for the model).
+  function downscaleToBase64(file: File, maxDim = 1280): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("canvas unsupported"));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          resolve(dataUrl.split(",")[1] ?? "");
+        };
+        img.onerror = reject;
+        img.src = String(reader.result);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -56,8 +78,8 @@ export default function AddBottlePage() {
     setIdentifyMsg(null);
     setIdentifying(true);
     try {
-      const base64 = await fileToBase64(file);
-      const res = await identifyLabelAction(base64, file.type);
+      const base64 = await downscaleToBase64(file);
+      const res = await identifyLabelAction(base64, "image/jpeg");
       if ("error" in res) {
         setIdentifyMsg(res.error);
         return;
