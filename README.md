@@ -24,6 +24,22 @@ Built as a Docker image and run via Docker Compose (`compose.yaml`), managed thr
 Migrations run automatically on server boot (`src/instrumentation.ts`), so a fresh deploy self-applies the schema — no manual `pnpm db:migrate` step is needed (that command remains available for local development).
 
 ## AI (optional)
-Photo label identification and drink-window estimates use Google Gemini. Set
-`GEMINI_API_KEY` (free tier from Google AI Studio) in the Stack environment to
-enable them. Without a key, the app still works for manual entry and name search.
+Photo label identification and drink-window estimates are powered by a swappable
+AI provider. Select it with the `AI_PROVIDER` environment variable (`gemini` or
+`mistral`; defaults to `gemini` when unset).
+
+**EU users — use Mistral (recommended):** Gemini's free tier is unavailable in
+the EU under Google's Terms of Service. Mistral is a French provider with a free
+tier that is fully ToS-compliant in the EU.
+
+- Set `AI_PROVIDER=mistral` and `MISTRAL_API_KEY=<your key>` (get a free key at
+  [console.mistral.ai](https://console.mistral.ai)). The default vision model is
+  `pixtral-12b-latest`; override with `MISTRAL_MODEL` if needed.
+
+**Global / non-EU users:** Set `AI_PROVIDER=gemini` (or leave it unset) and
+`GEMINI_API_KEY=<your key>` (free tier from
+[Google AI Studio](https://aistudio.google.com)). Override the model with
+`GEMINI_MODEL` (default: `gemini-2.0-flash`).
+
+Without any key, the app still works fully for manual entry and name search;
+drink windows simply show "—".
