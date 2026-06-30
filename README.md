@@ -43,3 +43,9 @@ tier that is fully ToS-compliant in the EU.
 
 Without any key, the app still works fully for manual entry and name search;
 drink windows simply show "—".
+
+Web enrichment after a photo (or via the "Enrichir depuis le web" button) uses
+Tavily (free, no card required — set `TAVILY_API_KEY` at
+[tavily.com](https://tavily.com)) together with Mistral; it pre-fills
+region, grapes, description, and purchase price, and stores a product image
+when one is found.

@@ -75,21 +75,25 @@ export default async function CellarPage({
             const ds = drinkStatus(b.drinkFrom, b.drinkTo, year);
             return (
               <li key={b.itemId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--s-4)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
-                <div>
-                  <a href={`/wine/${b.wineId}`} style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h3)", color: "var(--ink)" }}>
-                    {b.producer}{b.cuvee ? ` · ${b.cuvee}` : ""}{b.vintage ? ` ${b.vintage}` : ""}
-                  </a>
-                  <div style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>
-                    {b.region ?? "—"} · {b.color ?? "—"} · ×{b.quantity}
-                    {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
-                  </div>
-                  {ds && (
-                    <span style={{ display: "inline-block", marginTop: 4, fontSize: "var(--t-meta)", color: "#fff", background: ds.color, padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>
-                      {ds.label}
-                    </span>
-                  )}
-                  <div style={{ marginTop: 6 }}>
-                    <RowRating wineId={b.wineId} value={b.rating != null ? Number(b.rating) : null} />
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", minWidth: 0 }}>
+                  <img src={`/api/wine-image/${b.wineId}`} alt="" width={40} height={54}
+                    style={{ objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--cream-deep)", flex: "none" }} />
+                  <div>
+                    <a href={`/wine/${b.wineId}`} style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h3)", color: "var(--ink)" }}>
+                      {b.producer}{b.cuvee ? ` · ${b.cuvee}` : ""}{b.vintage ? ` ${b.vintage}` : ""}
+                    </a>
+                    <div style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>
+                      {b.region ?? "—"} · {b.color ?? "—"} · ×{b.quantity}
+                      {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
+                    </div>
+                    {ds && (
+                      <span style={{ display: "inline-block", marginTop: 4, fontSize: "var(--t-meta)", color: "#fff", background: ds.color, padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>
+                        {ds.label}
+                      </span>
+                    )}
+                    <div style={{ marginTop: 6 }}>
+                      <RowRating wineId={b.wineId} value={b.rating != null ? Number(b.rating) : null} />
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
