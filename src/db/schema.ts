@@ -81,3 +81,10 @@ export const priceSnapshots = pgTable("price_snapshots", {
   source: text("source"),
   fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
 });
+
+export const wineImages = pgTable("wine_images", {
+  wineId: uuid("wine_id").primaryKey().references(() => wines.id, { onDelete: "cascade" }),
+  data: text("data").notNull(),
+  mime: text("mime").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
