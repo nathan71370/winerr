@@ -93,6 +93,7 @@ export default async function CellarPage({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
+                  <a href={`/cellar/${b.itemId}/edit`} style={{ fontSize: "var(--t-meta)", color: "var(--ink-soft)" }}>Éditer</a>
                   {b.status === "in_cellar" && (
                     <form action={markDrunkAction}>
                       <input type="hidden" name="itemId" value={b.itemId} />
