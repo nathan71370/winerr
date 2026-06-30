@@ -32,3 +32,9 @@ export const addBottleSchema = z.object({
 });
 
 export type AddBottleInput = z.infer<typeof addBottleSchema>;
+
+export const updateBottleSchema = addBottleSchema.extend({
+  itemId: z.string().min(1),
+  purchaseDate: z.preprocess(emptyToUndefined, z.string().optional()),
+});
+export type UpdateBottleInput = z.infer<typeof updateBottleSchema>;

@@ -51,6 +51,30 @@ export async function searchWines(query: string, limit = 10) {
     .limit(limit);
 }
 
+// A single bottle (scoped to the user) joined to its wine — for the edit form.
+export async function getCellarItem(userId: string, itemId: string) {
+  const row = (await db
+    .select({
+      itemId: cellarItems.id,
+      quantity: cellarItems.quantity,
+      purchasePrice: cellarItems.purchasePrice,
+      purchaseDate: cellarItems.purchaseDate,
+      wineId: wines.id,
+      producer: wines.producer,
+      cuvee: wines.cuvee,
+      vintage: wines.vintage,
+      region: wines.region,
+      country: wines.country,
+      color: wines.color,
+      grapes: wines.grapes,
+    })
+    .from(cellarItems)
+    .innerJoin(wines, eq(cellarItems.wineId, wines.id))
+    .where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId)))
+    .limit(1))[0];
+  return row ?? null;
+}
+
 export async function getWineWithBottles(userId: string, wineId: string) {
   const wine = (await db.select().from(wines).where(eq(wines.id, wineId)).limit(1))[0];
   if (!wine) return null;
