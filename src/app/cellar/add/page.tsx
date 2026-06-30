@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { addBottleAction } from "@/cellar/actions";
 import { searchWinesAction } from "./search-action";
 import { identifyLabelAction } from "@/cellar/add/identify-action";
+import { enrichWineAction } from "@/cellar/add/enrich-action";
 
 type Suggestion = {
   lwin: string; displayName: string | null; producer: string | null;
@@ -20,6 +21,9 @@ export default function AddBottlePage() {
   const [identifying, setIdentifying] = useState(false);
   const [identifyMsg, setIdentifyMsg] = useState<string | null>(null);
   const [photoB64, setPhotoB64] = useState("");
+  const [enriching, setEnriching] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [form, setForm] = useState({
     producer: "", cuvee: "", vintage: "", region: "", country: "",
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
@@ -41,6 +45,24 @@ export default function AddBottlePage() {
       lwinCode: s.lwin,
     }));
     setSuggestions([]);
+  }
+
+  // Merge non-null enrichment into the form WITHOUT overwriting fields the user
+  // (or the label read) already filled. Pre-fills purchase price from the found
+  // market price, and remembers a product image URL (best-effort).
+  function applyEnrichment(en: {
+    region: string | null; country: string | null; grapes: string | null;
+    description: string | null; priceEur: number | null; imageUrl: string | null;
+  }) {
+    setForm((f) => ({
+      ...f,
+      region: f.region || (en.region ?? ""),
+      country: f.country || (en.country ?? ""),
+      grapes: f.grapes || (en.grapes ?? ""),
+      purchasePrice: f.purchasePrice || (en.priceEur != null ? String(en.priceEur) : ""),
+    }));
+    if (en.imageUrl) setImageUrl(en.imageUrl);
+    setEnrichMsg(en.description || "Infos enrichies depuis le web.");
   }
 
   // Downscale to a max dimension and re-encode as JPEG so the base64 payload
@@ -100,8 +122,37 @@ export default function AddBottlePage() {
       }));
       setSuggestions([]);
       setIdentifyMsg(`Identifié (confiance ${(e.confidence * 100).toFixed(0)} %) — vérifie et corrige si besoin.`);
+      if (e.producer) {
+        setEnriching(true);
+        try {
+          const er = await enrichWineAction(e.producer, e.cuvee, e.vintage ?? null);
+          if ("enrichment" in er) applyEnrichment(er.enrichment);
+        } finally {
+          setEnriching(false);
+        }
+      }
     } finally {
       setIdentifying(false);
+    }
+  }
+
+  async function onEnrich() {
+    if (form.producer.trim().length < 2) {
+      setEnrichMsg("Renseigne au moins le domaine.");
+      return;
+    }
+    setEnriching(true);
+    setEnrichMsg(null);
+    try {
+      const er = await enrichWineAction(
+        form.producer,
+        form.cuvee || null,
+        form.vintage ? Number(form.vintage) : null,
+      );
+      if ("error" in er) setEnrichMsg(er.error);
+      else applyEnrichment(er.enrichment);
+    } finally {
+      setEnriching(false);
     }
   }
 
@@ -146,11 +197,17 @@ export default function AddBottlePage() {
             <option value="rose">Rosé</option><option value="effervescent">Effervescent</option>
           </select>
         </label>
+        <button type="button" onClick={onEnrich} disabled={enriching}
+          style={{ padding: "var(--s-2) var(--s-3)", border: "1px solid var(--accent)", borderRadius: "var(--radius-pill)", background: "transparent", color: "var(--accent-deep)", fontSize: "var(--t-small)", cursor: "pointer", justifySelf: "start" }}>
+          {enriching ? "Recherche web…" : "🔎 Enrichir depuis le web"}
+        </button>
+        {enrichMsg && <p style={{ fontSize: "var(--t-meta)", color: "var(--ink-mute)" }}>{enrichMsg}</p>}
         <input type="hidden" name="country" value={form.country} />
         <input type="hidden" name="grapes" value={form.grapes} />
         <input type="hidden" name="lwinCode" value={form.lwinCode} />
         <input type="hidden" name="imageB64" value={photoB64} />
         <input type="hidden" name="imageMime" value="image/jpeg" />
+        <input type="hidden" name="imageUrl" value={imageUrl} />
         <div style={{ borderTop: "1px dashed var(--line)", paddingTop: "var(--s-3)", display: "grid", gap: "var(--s-3)" }}>
           <label style={lbl}>Quantité
             <input name="quantity" value={form.quantity} inputMode="numeric"
