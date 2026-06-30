@@ -34,6 +34,12 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     grapes: d.grapes ?? null,
     lwinCode: d.lwinCode ?? null,
   });
+  const imageB64 = formData.get("imageB64");
+  const imageMime = formData.get("imageMime");
+  if (typeof imageB64 === "string" && imageB64.length > 0 && typeof imageMime === "string") {
+    const { setWineImage } = await import("@/images/store");
+    await setWineImage(wineId, imageB64, imageMime);
+  }
   await db.insert(cellarItems).values({
     userId,
     wineId,

@@ -19,6 +19,7 @@ export default function AddBottlePage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [identifying, setIdentifying] = useState(false);
   const [identifyMsg, setIdentifyMsg] = useState<string | null>(null);
+  const [photoB64, setPhotoB64] = useState("");
   const [form, setForm] = useState({
     producer: "", cuvee: "", vintage: "", region: "", country: "",
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
@@ -79,6 +80,7 @@ export default function AddBottlePage() {
     setIdentifying(true);
     try {
       const base64 = await downscaleToBase64(file);
+      setPhotoB64(base64);
       const res = await identifyLabelAction(base64, "image/jpeg");
       if ("error" in res) {
         setIdentifyMsg(res.error);
@@ -147,6 +149,8 @@ export default function AddBottlePage() {
         <input type="hidden" name="country" value={form.country} />
         <input type="hidden" name="grapes" value={form.grapes} />
         <input type="hidden" name="lwinCode" value={form.lwinCode} />
+        <input type="hidden" name="imageB64" value={photoB64} />
+        <input type="hidden" name="imageMime" value="image/jpeg" />
         <div style={{ borderTop: "1px dashed var(--line)", paddingTop: "var(--s-3)", display: "grid", gap: "var(--s-3)" }}>
           <label style={lbl}>Quantité
             <input name="quantity" value={form.quantity} inputMode="numeric"
