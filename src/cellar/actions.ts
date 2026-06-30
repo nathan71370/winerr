@@ -37,22 +37,33 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   const imageB64 = formData.get("imageB64");
   const imageMime = formData.get("imageMime");
   const imageUrl = formData.get("imageUrl");
-  if (typeof imageB64 === "string" && imageB64.length > 0 && typeof imageMime === "string") {
+  if (
+    typeof imageB64 === "string" &&
+    imageB64.length > 0 &&
+    imageB64.length < 4_000_000 && // ~3 MB binary cap
+    typeof imageMime === "string" &&
+    imageMime.startsWith("image/")
+  ) {
     const { setWineImage } = await import("@/images/store");
     await setWineImage(wineId, imageB64, imageMime);
-  } else if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+  } else if (typeof imageUrl === "string") {
+    // Best-effort fetch of a found product image. Harden against SSRF: HTTPS
+    // only, no redirect following, short timeout, image content-type + size cap.
     try {
-      const r = await fetch(imageUrl);
-      const ct = r.headers.get("content-type") ?? "";
-      if (r.ok && ct.startsWith("image/")) {
-        const buf = Buffer.from(await r.arrayBuffer());
-        if (buf.length > 0 && buf.length < 3_000_000) {
-          const { setWineImage } = await import("@/images/store");
-          await setWineImage(wineId, buf.toString("base64"), ct);
+      const u = new URL(imageUrl);
+      if (u.protocol === "https:") {
+        const r = await fetch(imageUrl, { redirect: "error", signal: AbortSignal.timeout(8_000) });
+        const ct = r.headers.get("content-type") ?? "";
+        if (r.ok && ct.startsWith("image/")) {
+          const buf = Buffer.from(await r.arrayBuffer());
+          if (buf.length > 0 && buf.length < 3_000_000) {
+            const { setWineImage } = await import("@/images/store");
+            await setWineImage(wineId, buf.toString("base64"), ct);
+          }
         }
       }
     } catch {
-      // best-effort: a broken/hotlinked image URL just means no image
+      // best-effort: a malformed/broken/blocked image URL just means no image
     }
   }
   await db.insert(cellarItems).values({
