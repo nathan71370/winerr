@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { cellarItems } from "@/db/schema";
 import { auth } from "@/auth/config";
-import { addBottleSchema } from "@/lib/validation";
+import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
 
@@ -51,6 +51,49 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   void refreshDrinkWindow(wineId);
   revalidatePath("/cellar");
   redirect("/cellar");
+}
+
+export async function updateBottleAction(_prev: unknown, formData: FormData) {
+  const userId = await requireUserId();
+  const parsed = updateBottleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: "Champs invalides (le domaine et la couleur sont requis)." };
+  }
+  const d = parsed.data;
+
+  // Ownership check: the item must belong to the acting user.
+  const existing = (await db
+    .select({ id: cellarItems.id })
+    .from(cellarItems)
+    .where(and(eq(cellarItems.id, d.itemId), eq(cellarItems.userId, userId)))
+    .limit(1))[0];
+  if (!existing) return { error: "Bouteille introuvable." };
+
+  // Re-resolve the catalog wine from the (possibly corrected) fields.
+  const wineId = await ensureWine({
+    producer: d.producer,
+    cuvee: d.cuvee ?? null,
+    vintage: d.vintage ?? null,
+    region: d.region ?? null,
+    country: d.country ?? null,
+    color: d.color,
+    grapes: d.grapes ?? null,
+    lwinCode: d.lwinCode ?? null,
+  });
+
+  await db
+    .update(cellarItems)
+    .set({
+      wineId,
+      quantity: d.quantity,
+      purchasePrice: d.purchasePrice != null ? String(d.purchasePrice) : null,
+      ...(d.purchaseDate ? { purchaseDate: d.purchaseDate } : {}),
+    })
+    .where(and(eq(cellarItems.id, d.itemId), eq(cellarItems.userId, userId)));
+
+  revalidatePath("/cellar");
+  revalidatePath(`/wine/${wineId}`);
+  redirect(`/wine/${wineId}`);
 }
 
 export async function deleteBottleAction(formData: FormData) {
