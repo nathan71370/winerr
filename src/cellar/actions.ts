@@ -36,9 +36,24 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   });
   const imageB64 = formData.get("imageB64");
   const imageMime = formData.get("imageMime");
+  const imageUrl = formData.get("imageUrl");
   if (typeof imageB64 === "string" && imageB64.length > 0 && typeof imageMime === "string") {
     const { setWineImage } = await import("@/images/store");
     await setWineImage(wineId, imageB64, imageMime);
+  } else if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+    try {
+      const r = await fetch(imageUrl);
+      const ct = r.headers.get("content-type") ?? "";
+      if (r.ok && ct.startsWith("image/")) {
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (buf.length > 0 && buf.length < 3_000_000) {
+          const { setWineImage } = await import("@/images/store");
+          await setWineImage(wineId, buf.toString("base64"), ct);
+        }
+      }
+    } catch {
+      // best-effort: a broken/hotlinked image URL just means no image
+    }
   }
   await db.insert(cellarItems).values({
     userId,
