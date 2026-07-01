@@ -42,8 +42,8 @@ export type UpdateBottleInput = z.infer<typeof updateBottleSchema>;
 export const unitSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(["grid", "diamond"]),
-  cols: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).optional()),
-  rows: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).optional()),
+  cols: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20)),
+  rows: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20)),
   gridX: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),
   gridY: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),
 });
