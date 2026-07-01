@@ -22,20 +22,27 @@ describe("boardSize", () => {
 });
 
 describe("compartmentPolygon (diamond)", () => {
-  const diamond: Unit = { kind: "diamond", cols: 2, rows: 1 };
-  it("returns the north triangle of a cell (meeting at that cell's center)", () => {
-    // cell (r1,c1): cw = CUBE/2, ch = CUBE; center = (CUBE/4, CUBE/2)
-    const poly = compartmentPolygon(diamond, "L1C1N", { x: 0, y: 0 });
-    expect(poly).toEqual([{ x: 0, y: 0 }, { x: CUBE / 2, y: 0 }, { x: CUBE / 4, y: CUBE / 2 }]);
+  const diamond: Unit = { kind: "diamond", cols: 2, rows: 2 };
+  it("returns the full interior diamond for an even-sum interior point", () => {
+    const poly = compartmentPolygon(diamond, "D1-1", { x: 0, y: 0 });
+    expect(poly).toEqual([
+      { x: CUBE / 2, y: 0 }, { x: CUBE, y: CUBE / 2 }, { x: CUBE / 2, y: CUBE }, { x: 0, y: CUBE / 2 },
+    ]);
   });
-  it("returns the south triangle of the second cell", () => {
-    const poly = compartmentPolygon(diamond, "L1C2S", { x: 0, y: 0 });
-    const cw = CUBE / 2;
-    expect(poly).toEqual([{ x: CUBE, y: CUBE }, { x: cw, y: CUBE }, { x: cw + cw / 2, y: CUBE / 2 }]);
+  it("returns [] for an odd-sum or out-of-range diamond key", () => {
+    expect(compartmentPolygon(diamond, "D1-0", { x: 0, y: 0 })).toEqual([]);
+    expect(compartmentPolygon(diamond, "D3-1", { x: 0, y: 0 })).toEqual([]);
   });
-  it("returns [] for an out-of-range or malformed diamond key", () => {
-    expect(compartmentPolygon(diamond, "L2C1N", { x: 0, y: 0 })).toEqual([]);
-    expect(compartmentPolygon(diamond, "L1C1", { x: 0, y: 0 })).toEqual([]);
+  it("clips a corner bin to a triangle inside the frame", () => {
+    const poly = compartmentPolygon(diamond, "D0-0", { x: 0, y: 0 });
+    expect(poly.length).toBeGreaterThanOrEqual(3);
+    expect(poly.length).toBeLessThanOrEqual(4);
+    for (const p of poly) {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThanOrEqual(CUBE);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeLessThanOrEqual(CUBE);
+    }
   });
 });
 
