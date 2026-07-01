@@ -1,7 +1,8 @@
-import { pgTable, uuid, text, integer, timestamp, numeric, pgEnum, date, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, timestamp, numeric, pgEnum, date, unique, index } from "drizzle-orm/pg-core";
 
 export const wineColor = pgEnum("wine_color", ["rouge", "blanc", "rose", "effervescent"]);
 export const cellarStatus = pgEnum("cellar_status", ["in_cellar", "drunk"]);
+export const storageKind = pgEnum("storage_kind", ["grid", "diamond"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -88,3 +89,27 @@ export const wineImages = pgTable("wine_images", {
   mime: text("mime").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const storageUnits = pgTable("storage_units", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  kind: storageKind("kind").notNull(),
+  cols: integer("cols"),
+  rows: integer("rows"),
+  gridX: integer("grid_x").notNull().default(0),
+  gridY: integer("grid_y").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const placements = pgTable("placements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cellarItemId: uuid("cellar_item_id").notNull().references(() => cellarItems.id, { onDelete: "cascade" }),
+  unitId: uuid("unit_id").notNull().references(() => storageUnits.id, { onDelete: "cascade" }),
+  compartment: text("compartment").notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  byItem: index("placements_item_idx").on(t.cellarItemId),
+  byUnit: index("placements_unit_idx").on(t.unitId),
+}));
