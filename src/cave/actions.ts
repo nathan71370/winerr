@@ -98,21 +98,30 @@ export async function placeBottlesAction(formData: FormData) {
   if (!unit) return;
   if (!isValidCompartment({ kind: unit.kind, cols: unit.cols, rows: unit.rows }, d.compartment)) return;
 
-  await db.transaction(async (tx) => {
-    const current = await tx
-      .select({ id: placements.id, unitId: placements.unitId, compartment: placements.compartment, quantity: placements.quantity })
-      .from(placements)
-      .innerJoin(cellarItems, eq(placements.cellarItemId, cellarItems.id))
-      .where(and(eq(placements.cellarItemId, d.cellarItemId), eq(cellarItems.userId, userId)))
-      .orderBy(placements.createdAt);
-    if (!canPlace(item.quantity, current, d.quantity)) return;
-    const same = current.find((p) => p.unitId === d.unitId && p.compartment === d.compartment);
-    if (same) {
-      await tx.update(placements).set({ quantity: same.quantity + d.quantity }).where(eq(placements.id, same.id));
-    } else {
-      await tx.insert(placements).values({ cellarItemId: d.cellarItemId, unitId: d.unitId, compartment: d.compartment, quantity: d.quantity });
-    }
-  });
+  try {
+    await db.transaction(async (tx) => {
+      const current = await tx
+        .select({ id: placements.id, unitId: placements.unitId, compartment: placements.compartment, quantity: placements.quantity })
+        .from(placements)
+        .innerJoin(cellarItems, eq(placements.cellarItemId, cellarItems.id))
+        .where(and(eq(placements.cellarItemId, d.cellarItemId), eq(cellarItems.userId, userId)))
+        .orderBy(placements.createdAt);
+      if (!canPlace(item.quantity, current, d.quantity)) return;
+      const same = current.find((p) => p.unitId === d.unitId && p.compartment === d.compartment);
+      if (same) {
+        await tx.update(placements).set({ quantity: same.quantity + d.quantity }).where(eq(placements.id, same.id));
+      } else {
+        await tx.insert(placements).values({ cellarItemId: d.cellarItemId, unitId: d.unitId, compartment: d.compartment, quantity: d.quantity });
+      }
+    });
+  } catch (err) {
+    // Concurrent placement into the same slot: the other call won the insert
+    // and tripped uniq_placement_slot here. The invariant is intact (that
+    // row now holds the bottles); silent no-op, matching this file's guard
+    // convention. The user can retry if they still want to place more.
+    if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "23505") return;
+    throw err;
+  }
   revalidatePath("/cave/setup");
   revalidatePath("/cave");
 }
