@@ -91,6 +91,7 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   // sweep is the proper home for stragglers).
   void refreshDrinkWindow(wineId);
   revalidatePath("/cellar");
+  revalidatePath("/cave");
   redirect("/cellar");
 }
 
@@ -135,6 +136,7 @@ export async function updateBottleAction(_prev: unknown, formData: FormData) {
   await reconcileItemPlacements(userId, d.itemId);
 
   revalidatePath("/cellar");
+  revalidatePath("/cave");
   revalidatePath(`/wine/${wineId}`);
   redirect(`/wine/${wineId}`);
 }
@@ -144,6 +146,7 @@ export async function deleteBottleAction(formData: FormData) {
   const itemId = String(formData.get("itemId"));
   await db.delete(cellarItems).where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId)));
   revalidatePath("/cellar");
+  revalidatePath("/cave");
 }
 
 export async function markDrunkAction(formData: FormData) {
@@ -160,4 +163,5 @@ export async function markDrunkAction(formData: FormData) {
     .where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId), eq(cellarItems.quantity, 0)));
   await reconcileItemPlacements(userId, itemId);
   revalidatePath("/cellar");
+  revalidatePath("/cave");
 }
