@@ -1,0 +1,1 @@
+ALTER TABLE "placements" ADD CONSTRAINT "uniq_placement_slot" UNIQUE("cellar_item_id","unit_id","compartment");

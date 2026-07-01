@@ -112,4 +112,5 @@ export const placements = pgTable("placements", {
 }, (t) => ({
   byItem: index("placements_item_idx").on(t.cellarItemId),
   byUnit: index("placements_unit_idx").on(t.unitId),
+  uniqSlot: unique("uniq_placement_slot").on(t.cellarItemId, t.unitId, t.compartment),
 }));

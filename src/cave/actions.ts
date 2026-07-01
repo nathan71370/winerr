@@ -98,20 +98,21 @@ export async function placeBottlesAction(formData: FormData) {
   if (!unit) return;
   if (!isValidCompartment({ kind: unit.kind, cols: unit.cols, rows: unit.rows }, d.compartment)) return;
 
-  const current = await listPlacementsForItem(userId, d.cellarItemId);
-  if (!canPlace(item.quantity, current, d.quantity)) return;
-
-  const same = current.find((p) => p.unitId === d.unitId && p.compartment === d.compartment);
-  if (same) {
-    await db.update(placements).set({ quantity: same.quantity + d.quantity }).where(eq(placements.id, same.id));
-  } else {
-    await db.insert(placements).values({
-      cellarItemId: d.cellarItemId,
-      unitId: d.unitId,
-      compartment: d.compartment,
-      quantity: d.quantity,
-    });
-  }
+  await db.transaction(async (tx) => {
+    const current = await tx
+      .select({ id: placements.id, unitId: placements.unitId, compartment: placements.compartment, quantity: placements.quantity })
+      .from(placements)
+      .innerJoin(cellarItems, eq(placements.cellarItemId, cellarItems.id))
+      .where(and(eq(placements.cellarItemId, d.cellarItemId), eq(cellarItems.userId, userId)))
+      .orderBy(placements.createdAt);
+    if (!canPlace(item.quantity, current, d.quantity)) return;
+    const same = current.find((p) => p.unitId === d.unitId && p.compartment === d.compartment);
+    if (same) {
+      await tx.update(placements).set({ quantity: same.quantity + d.quantity }).where(eq(placements.id, same.id));
+    } else {
+      await tx.insert(placements).values({ cellarItemId: d.cellarItemId, unitId: d.unitId, compartment: d.compartment, quantity: d.quantity });
+    }
+  });
   revalidatePath("/cave/setup");
   revalidatePath("/cave");
 }
