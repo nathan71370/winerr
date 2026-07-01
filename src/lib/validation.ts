@@ -38,3 +38,27 @@ export const updateBottleSchema = addBottleSchema.extend({
   purchaseDate: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 export type UpdateBottleInput = z.infer<typeof updateBottleSchema>;
+
+export const unitSchema = z.object({
+  name: z.string().min(1),
+  kind: z.enum(["grid", "diamond"]),
+  cols: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).optional()),
+  rows: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).optional()),
+  gridX: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),
+  gridY: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),
+});
+export type UnitInput = z.infer<typeof unitSchema>;
+
+export const placeSchema = z.object({
+  cellarItemId: z.string().min(1),
+  unitId: z.string().min(1),
+  compartment: z.string().min(1),
+  quantity: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1)),
+});
+export type PlaceInput = z.infer<typeof placeSchema>;
+
+export const unplaceSchema = z.object({
+  placementId: z.string().min(1),
+  quantity: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).optional()),
+});
+export type UnplaceInput = z.infer<typeof unplaceSchema>;
