@@ -22,12 +22,19 @@ describe("boardSize", () => {
 });
 
 describe("compartmentPolygon (diamond)", () => {
-  const diamond: Unit = { kind: "diamond", cols: null, rows: null };
-  it("returns the north triangle meeting at the face center", () => {
-    const poly = compartmentPolygon(diamond, "N", { x: 0, y: 0 });
-    expect(poly).toEqual([{ x: 0, y: 0 }, { x: CUBE, y: 0 }, { x: CUBE / 2, y: CUBE / 2 }]);
+  const diamond: Unit = { kind: "diamond", cols: 2, rows: 1 };
+  it("returns the north triangle of a cell (meeting at that cell's center)", () => {
+    // cell (r1,c1): cw = CUBE/2, ch = CUBE; center = (CUBE/4, CUBE/2)
+    const poly = compartmentPolygon(diamond, "L1C1N", { x: 0, y: 0 });
+    expect(poly).toEqual([{ x: 0, y: 0 }, { x: CUBE / 2, y: 0 }, { x: CUBE / 4, y: CUBE / 2 }]);
   });
-  it("returns [] for an invalid key", () => {
+  it("returns the south triangle of the second cell", () => {
+    const poly = compartmentPolygon(diamond, "L1C2S", { x: 0, y: 0 });
+    const cw = CUBE / 2;
+    expect(poly).toEqual([{ x: CUBE, y: CUBE }, { x: cw, y: CUBE }, { x: cw + cw / 2, y: CUBE / 2 }]);
+  });
+  it("returns [] for an out-of-range or malformed diamond key", () => {
+    expect(compartmentPolygon(diamond, "L2C1N", { x: 0, y: 0 })).toEqual([]);
     expect(compartmentPolygon(diamond, "L1C1", { x: 0, y: 0 })).toEqual([]);
   });
 });

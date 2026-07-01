@@ -32,26 +32,38 @@ export function boardSize(units: { gridX: number; gridY: number }[]): { width: n
 }
 
 // Absolute SVG polygon for one compartment on the cube whose front-face top-left
-// is `origin`. Returns [] for a key invalid for the unit's kind/dimensions.
+// is `origin`. grid "L{r}C{c}" → the cell rectangle; diamond "L{r}C{c}{dir}" →
+// the triangle for that direction within the cell, meeting at the cell center.
+// Returns [] for a key invalid for the unit's kind/dimensions.
 export function compartmentPolygon(unit: Unit, key: string, origin: Point): Point[] {
   const { x, y } = origin;
   const S = CUBE;
+  const cols = unit.cols ?? 0;
+  const rows = unit.rows ?? 0;
+  if (cols <= 0 || rows <= 0) return [];
+
   if (unit.kind === "diamond") {
-    const tl = { x, y }, tr = { x: x + S, y }, br = { x: x + S, y: y + S }, bl = { x, y: y + S };
-    const c = { x: x + S / 2, y: y + S / 2 };
-    switch (key) {
-      case "N": return [tl, tr, c];
-      case "E": return [tr, br, c];
-      case "S": return [br, bl, c];
-      case "O": return [bl, tl, c];
+    const m = /^L(\d+)C(\d+)([NESO])$/.exec(key);
+    if (!m) return [];
+    const r = Number(m[1]) - 1, c = Number(m[2]) - 1, d = m[3];
+    if (r < 0 || c < 0 || r >= rows || c >= cols) return [];
+    const cw = S / cols, ch = S / rows;
+    const x0 = x + c * cw, y0 = y + r * ch;
+    const tl = { x: x0, y: y0 }, tr = { x: x0 + cw, y: y0 }, br = { x: x0 + cw, y: y0 + ch }, bl = { x: x0, y: y0 + ch };
+    const ctr = { x: x0 + cw / 2, y: y0 + ch / 2 };
+    switch (d) {
+      case "N": return [tl, tr, ctr];
+      case "E": return [tr, br, ctr];
+      case "S": return [br, bl, ctr];
+      case "O": return [bl, tl, ctr];
       default: return [];
     }
   }
+
   const m = /^L(\d+)C(\d+)$/.exec(key);
   if (!m) return [];
-  const cols = unit.cols ?? 0, rows = unit.rows ?? 0;
   const r = Number(m[1]) - 1, c = Number(m[2]) - 1;
-  if (cols <= 0 || rows <= 0 || r < 0 || c < 0 || r >= rows || c >= cols) return [];
+  if (r < 0 || c < 0 || r >= rows || c >= cols) return [];
   const cw = S / cols, ch = S / rows;
   const x0 = x + c * cw, y0 = y + r * ch;
   return [{ x: x0, y: y0 }, { x: x0 + cw, y: y0 }, { x: x0 + cw, y: y0 + ch }, { x: x0, y: y0 + ch }];
