@@ -68,3 +68,35 @@ export async function unplacedTray(userId: string) {
     .map((it) => ({ ...it, unplaced: Math.max(0, it.quantity - it.placed) }))
     .filter((it) => it.unplaced > 0);
 }
+
+// Every placement of the user's bottles, joined to the wine label — the raw rows
+// the board groups by compartment. (Placements only exist for in-cellar bottles;
+// drinking reconciles them away.)
+export async function caveContents(userId: string) {
+  return db
+    .select({
+      placementId: placements.id,
+      unitId: placements.unitId,
+      compartment: placements.compartment,
+      quantity: placements.quantity,
+      itemId: cellarItems.id,
+      wineId: wines.id,
+      producer: wines.producer,
+      cuvee: wines.cuvee,
+      vintage: wines.vintage,
+      color: wines.color,
+    })
+    .from(placements)
+    .innerJoin(cellarItems, eq(placements.cellarItemId, cellarItems.id))
+    .innerJoin(wines, eq(cellarItems.wineId, wines.id))
+    .where(eq(cellarItems.userId, userId));
+}
+
+// The compartments (unit + compartment) holding a given wine, for locate mode.
+export async function locateWinePlacements(userId: string, wineId: string) {
+  return db
+    .select({ unitId: placements.unitId, compartment: placements.compartment })
+    .from(placements)
+    .innerJoin(cellarItems, eq(placements.cellarItemId, cellarItems.id))
+    .where(and(eq(cellarItems.userId, userId), eq(cellarItems.wineId, wineId)));
+}
