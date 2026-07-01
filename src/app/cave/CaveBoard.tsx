@@ -22,7 +22,7 @@ export function CaveBoard({
 }) {
   const [selected, setSelected] = useState<string | null>(null); // "unitId:compartment"
   const grouped = groupContents(contents);
-  const highlightSet = new Set(highlight);
+  const highlightIds = new Set(highlight);
   const rows = units.length ? Math.max(...units.map((u) => u.gridY)) + 1 : 1;
   const { width, height } = boardSize(units);
 
@@ -63,13 +63,21 @@ export function CaveBoard({
                   const poly = compartmentPolygon(unit, key, origin);
                   const bottles = grouped.get(id) ?? [];
                   const count = bottles.reduce((s, b) => s + b.quantity, 0);
-                  const dimmed = highlightSet.size > 0 && !highlightSet.has(id);
-                  const glow = highlightSet.has(id);
+                  const dimmed = highlightIds.size > 0 && !highlightIds.has(id);
+                  const glow = highlightIds.has(id);
                   const fill = count > 0 ? colorHex[bottles[0].color ?? ""] ?? "#a08" : "transparent";
                   const cx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
                   const cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
                   return (
-                    <g key={id} onClick={() => setSelected(id)} style={{ cursor: "pointer", opacity: dimmed ? 0.28 : 1 }}>
+                    <g
+                      key={id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${u.name} · ${key}${count > 0 ? `, ${count} bouteille(s)` : ", vide"}`}
+                      onClick={() => setSelected(id)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(id); } }}
+                      style={{ cursor: "pointer", opacity: dimmed ? 0.28 : 1 }}
+                    >
                       <polygon points={pointsAttr(poly)} className={glow ? "cave-glow" : undefined}
                         fill={glow ? "var(--accent)" : fill} fillOpacity={glow ? 0.9 : count > 0 ? 0.85 : 0}
                         stroke={selected === id ? "var(--accent-deep)" : "#a6784a"} strokeWidth={selected === id ? 2.5 : 0.8} />
