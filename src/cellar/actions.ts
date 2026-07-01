@@ -9,6 +9,7 @@ import { auth } from "@/auth/config";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
+import { reconcileItemPlacements } from "@/cave/actions";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -131,6 +132,8 @@ export async function updateBottleAction(_prev: unknown, formData: FormData) {
     })
     .where(and(eq(cellarItems.id, d.itemId), eq(cellarItems.userId, userId)));
 
+  await reconcileItemPlacements(userId, d.itemId);
+
   revalidatePath("/cellar");
   revalidatePath(`/wine/${wineId}`);
   redirect(`/wine/${wineId}`);
@@ -155,5 +158,6 @@ export async function markDrunkAction(formData: FormData) {
     .update(cellarItems)
     .set({ status: "drunk" })
     .where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId), eq(cellarItems.quantity, 0)));
+  await reconcileItemPlacements(userId, itemId);
   revalidatePath("/cellar");
 }
