@@ -42,6 +42,7 @@ export function CellarBuilder({ units }: { units: CubeRow[] }) {
                     key={`${x}-${y}`}
                     draggable
                     onDragStart={() => setDragId(u.id)}
+                    onDragEnd={() => setDragId(null)}
                     onClick={() => { setSelected(u.id); setAdding(null); }}
                     role="button"
                     tabIndex={0}

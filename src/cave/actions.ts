@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { storageUnits, placements, cellarItems } from "@/db/schema";
@@ -10,11 +10,24 @@ import { isValidCompartment, type Unit } from "@/cave/compartments";
 import { canPlace, reconcilePlacements } from "@/cave/placement";
 import { getUnit, listPlacementsForItem } from "@/cave/queries";
 
+// True if the user already has a unit at (gridX, gridY), optionally excluding one unit id.
+async function cellOccupied(userId: string, gridX: number, gridY: number, exceptId?: string): Promise<boolean> {
+  const conds = [eq(storageUnits.userId, userId), eq(storageUnits.gridX, gridX), eq(storageUnits.gridY, gridY)];
+  if (exceptId) conds.push(ne(storageUnits.id, exceptId));
+  const rows = await db
+    .select({ id: storageUnits.id })
+    .from(storageUnits)
+    .where(and(...conds))
+    .limit(1);
+  return rows.length > 0;
+}
+
 export async function createUnitAction(_prev: unknown, formData: FormData) {
   const userId = await requireUserId();
   const parsed = unitSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Champs du cube invalides." };
   const d = parsed.data;
+  if (await cellOccupied(userId, d.gridX, d.gridY)) return { error: "Cette case est déjà occupée." };
   await db.insert(storageUnits).values({
     userId,
     name: d.name,
@@ -177,6 +190,7 @@ export async function reconcileItemPlacements(userId: string, cellarItemId: stri
 export async function moveUnitAction(unitId: string, gridX: number, gridY: number) {
   const userId = await requireUserId();
   if (!unitId || !Number.isInteger(gridX) || !Number.isInteger(gridY) || gridX < 0 || gridY < 0) return;
+  if (await cellOccupied(userId, gridX, gridY, unitId)) return; // target cell taken — no-op
   await db
     .update(storageUnits)
     .set({ gridX, gridY })
