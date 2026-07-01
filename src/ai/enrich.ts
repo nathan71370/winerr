@@ -49,7 +49,13 @@ export async function enrichWine(input: {
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const text = json.choices?.[0]?.message?.content;
     if (!text) return null;
-    return wineEnrichmentSchema.parse(JSON.parse(text));
+    const enrichment = wineEnrichmentSchema.parse(JSON.parse(text));
+    // Prefer a real product image from the top results' og:image tags (the LLM's
+    // imageUrl is unreliable). Overrides the LLM imageUrl when found.
+    const { firstOgImage } = await import("./og-image");
+    const og = await firstOgImage(results.slice(0, 3).map((r) => r.url).filter(Boolean));
+    if (og) enrichment.imageUrl = og;
+    return enrichment;
   } catch (e) {
     console.error("[enrich] failed", e);
     return null;
