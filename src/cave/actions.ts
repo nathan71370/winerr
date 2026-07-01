@@ -15,13 +15,12 @@ export async function createUnitAction(_prev: unknown, formData: FormData) {
   const parsed = unitSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Champs du cube invalides." };
   const d = parsed.data;
-  if (d.kind === "grid" && (!d.cols || !d.rows)) return { error: "Une grille exige des dimensions (colonnes × rangées)." };
   await db.insert(storageUnits).values({
     userId,
     name: d.name,
     kind: d.kind,
-    cols: d.kind === "grid" ? d.cols ?? null : null,
-    rows: d.kind === "grid" ? d.rows ?? null : null,
+    cols: d.cols,
+    rows: d.rows,
     gridX: d.gridX,
     gridY: d.gridY,
   });
@@ -37,15 +36,14 @@ export async function updateUnitAction(_prev: unknown, formData: FormData) {
   const parsed = unitSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Champs du cube invalides." };
   const d = parsed.data;
-  if (d.kind === "grid" && (!d.cols || !d.rows)) return { error: "Une grille exige des dimensions." };
 
   await db
     .update(storageUnits)
     .set({
       name: d.name,
       kind: d.kind,
-      cols: d.kind === "grid" ? d.cols ?? null : null,
-      rows: d.kind === "grid" ? d.rows ?? null : null,
+      cols: d.cols,
+      rows: d.rows,
       gridX: d.gridX,
       gridY: d.gridY,
     })
@@ -172,4 +170,17 @@ export async function reconcileItemPlacements(userId: string, cellarItemId: stri
       await db.update(placements).set({ quantity: after.quantity }).where(eq(placements.id, before.id));
     }
   }
+}
+
+// Lightweight reposition for the visual builder's drag-and-drop: only moves a
+// cube to a new (gridX, gridY). Ownership-scoped; silently no-ops on bad input.
+export async function moveUnitAction(unitId: string, gridX: number, gridY: number) {
+  const userId = await requireUserId();
+  if (!unitId || !Number.isInteger(gridX) || !Number.isInteger(gridY) || gridX < 0 || gridY < 0) return;
+  await db
+    .update(storageUnits)
+    .set({ gridX, gridY })
+    .where(and(eq(storageUnits.id, unitId), eq(storageUnits.userId, userId)));
+  revalidatePath("/cave/setup");
+  revalidatePath("/cave");
 }
