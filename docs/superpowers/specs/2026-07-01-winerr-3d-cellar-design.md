@@ -143,6 +143,14 @@ Drizzle migration `0004`: `storage_kind` enum, `storage_units`, `placements`, in
 - Dropping the obsolete `cellar_items.location` column.
 - Free rotation / multiple camera angles (iso is a fixed projection).
 
+## 14b. Plan A build notes → Plan B fast-follows
+
+Plan A shipped (model + configurator + placement). Reviews surfaced these to fold into Plan B:
+- **Concurrency:** place/unplace/reconcile are read-then-write without a transaction (repo-wide convention — no code uses `db.transaction`). Benign for single-user self-host (reconcile self-heals), but Plan B should wrap the placement mutations in a transaction and add a **unique constraint on `(cellarItemId, unitId, compartment)`** so a compartment never holds duplicate rows for the same item.
+- **Per-compartment capacity:** nothing caps how many bottles go into one compartment — only the item-level Σ ≤ quantity invariant is enforced. A grid cell (conceptually 1 bottle) can hold N. Decide in Plan B whether the visual layer enforces/【displays capacity.
+- **`unplacedTray()`** exists in `src/cave/queries.ts` but is unused — it is the intended source for Plan B's in-view "À ranger" tray.
+- The edit-page compartment `<select>` is static (first unit's compartments); Plan B's in-view placement UI makes it reactive to the chosen unit.
+
 ## 14. Styling
 
 Marathon tokens throughout (cream `#f7f5f0`/`#efeae0`, ink `#1a1614`, terracotta accent `#d85b3d`/`#b84527`, line `#e5ddd0`, wood tones for cube faces). Pine-cube faces in warm tans; highlight/pulse in terracotta. Mobile-first: the cave view pans/zooms and the whole flow works on a phone.
