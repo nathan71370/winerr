@@ -31,7 +31,7 @@ export default async function CellarPage({
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1 style={{ fontSize: "var(--t-h1)" }}>Ma cave</h1>
         <div style={{ display: "flex", gap: "var(--s-4)", alignItems: "baseline" }}>
-          <a href="/cave/setup" style={{ fontSize: "var(--t-small)" }}>Ma cave (3D)</a>
+          <a href="/cave" style={{ fontSize: "var(--t-small)" }}>Ma cave (3D)</a>
           <a href="/cellar/add" style={{ fontSize: "var(--t-small)" }}>+ Ajouter</a>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button style={{ background: "none", border: "none", color: "var(--ink-mute)", cursor: "pointer", fontSize: "var(--t-small)" }}>Déconnexion</button>
@@ -98,6 +98,7 @@ export default async function CellarPage({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
+                  <a href={`/cave?wine=${b.wineId}`} style={{ fontSize: "var(--t-meta)", color: "var(--accent-deep)" }}>Localiser</a>
                   <a href={`/cellar/${b.itemId}/edit`} style={{ fontSize: "var(--t-meta)", color: "var(--ink-soft)" }}>Éditer</a>
                   {b.status === "in_cellar" && (
                     <form action={markDrunkAction}>

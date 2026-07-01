@@ -15,7 +15,10 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
 
   return (
     <main style={{ maxWidth: 640, margin: "0 auto", padding: "var(--s-7) var(--s-5)" }}>
-      <a href="/cellar" style={{ fontSize: "var(--t-small)" }}>← Ma cave</a>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <a href="/cellar" style={{ fontSize: "var(--t-small)" }}>← Ma cave</a>
+        <a href={`/cave?wine=${wine.id}`} style={{ fontSize: "var(--t-small)", color: "var(--accent-deep)" }}>Localiser dans ma cave</a>
+      </div>
       <h1 style={{ fontSize: "var(--t-h1)", marginTop: "var(--s-3)" }}>
         {wine.producer}{wine.cuvee ? ` · ${wine.cuvee}` : ""}
       </h1>
