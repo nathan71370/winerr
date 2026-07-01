@@ -24,6 +24,8 @@ export default function AddBottlePage() {
   const [enriching, setEnriching] = useState(false);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [drinkFrom, setDrinkFrom] = useState("");
+  const [drinkTo, setDrinkTo] = useState("");
   const [form, setForm] = useState({
     producer: "", cuvee: "", vintage: "", region: "", country: "",
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
@@ -53,6 +55,7 @@ export default function AddBottlePage() {
   function applyEnrichment(en: {
     region: string | null; country: string | null; grapes: string | null;
     description: string | null; priceEur: number | null; imageUrl: string | null;
+    drinkFrom: number | null; drinkTo: number | null;
   }) {
     setForm((f) => ({
       ...f,
@@ -62,6 +65,8 @@ export default function AddBottlePage() {
       purchasePrice: f.purchasePrice || (en.priceEur != null ? String(en.priceEur) : ""),
     }));
     if (en.imageUrl) setImageUrl(en.imageUrl);
+    if (en.drinkFrom != null) setDrinkFrom(String(en.drinkFrom));
+    if (en.drinkTo != null) setDrinkTo(String(en.drinkTo));
     setEnrichMsg(en.description || "Infos enrichies depuis le web.");
   }
 
@@ -208,6 +213,8 @@ export default function AddBottlePage() {
         <input type="hidden" name="imageB64" value={photoB64} />
         <input type="hidden" name="imageMime" value="image/jpeg" />
         <input type="hidden" name="imageUrl" value={imageUrl} />
+        <input type="hidden" name="drinkFrom" value={drinkFrom} />
+        <input type="hidden" name="drinkTo" value={drinkTo} />
         <div style={{ borderTop: "1px dashed var(--line)", paddingTop: "var(--s-3)", display: "grid", gap: "var(--s-3)" }}>
           <label style={lbl}>Quantité
             <input name="quantity" value={form.quantity} inputMode="numeric"

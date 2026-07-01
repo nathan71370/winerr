@@ -93,7 +93,8 @@ export function createMistralProvider(opts: {
         ],
         response_format: { type: "json_object" },
       });
-      return drinkWindowSchema.parse(raw);
+      const parsed = drinkWindowSchema.safeParse(raw);
+      return parsed.success ? parsed.data : null;
     },
   };
 }

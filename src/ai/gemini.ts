@@ -112,7 +112,8 @@ export function createGeminiProvider(opts: {
           responseSchema: WINDOW_RESPONSE_SCHEMA,
         },
       });
-      return drinkWindowSchema.parse(raw);
+      const parsed = drinkWindowSchema.safeParse(raw);
+      return parsed.success ? parsed.data : null;
     },
   };
 }

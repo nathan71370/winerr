@@ -1,10 +1,10 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { cellarItems } from "@/db/schema";
+import { cellarItems, wines } from "@/db/schema";
 import { auth } from "@/auth/config";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
@@ -34,21 +34,23 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     grapes: d.grapes ?? null,
     lwinCode: d.lwinCode ?? null,
   });
+  // If the web enrichment found a drink window, set it on the wine (only when the
+  // wine has none yet — don't clobber a shared catalog value). This makes the web
+  // window the source and lets refreshDrinkWindow skip its own estimate.
+  const dFrom = Number(formData.get("drinkFrom"));
+  const dTo = Number(formData.get("drinkTo"));
+  if (Number.isFinite(dFrom) && Number.isFinite(dTo) && dFrom > 0 && dTo > 0) {
+    await db.update(wines)
+      .set({ drinkFrom: dFrom, drinkTo: dTo, drinkWindowSource: "web", drinkWindowFetchedAt: new Date() })
+      .where(and(eq(wines.id, wineId), isNull(wines.drinkFrom)));
+  }
   const imageB64 = formData.get("imageB64");
   const imageMime = formData.get("imageMime");
   const imageUrl = formData.get("imageUrl");
-  if (
-    typeof imageB64 === "string" &&
-    imageB64.length > 0 &&
-    imageB64.length < 4_000_000 && // ~3 MB binary cap
-    typeof imageMime === "string" &&
-    imageMime.startsWith("image/")
-  ) {
-    const { setWineImage } = await import("@/images/store");
-    await setWineImage(wineId, imageB64, imageMime);
-  } else if (typeof imageUrl === "string") {
-    // Best-effort fetch of a found product image. Harden against SSRF: HTTPS
-    // only, no redirect following, short timeout, image content-type + size cap.
+  const { setWineImage } = await import("@/images/store");
+  let imageStored = false;
+  // Prefer a web product image when available (SSRF-hardened: https, no redirect, timeout).
+  if (typeof imageUrl === "string" && imageUrl.length > 0) {
     try {
       const u = new URL(imageUrl);
       if (u.protocol === "https:") {
@@ -57,14 +59,20 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
         if (r.ok && ct.startsWith("image/")) {
           const buf = Buffer.from(await r.arrayBuffer());
           if (buf.length > 0 && buf.length < 3_000_000) {
-            const { setWineImage } = await import("@/images/store");
             await setWineImage(wineId, buf.toString("base64"), ct);
+            imageStored = true;
           }
         }
       }
     } catch {
-      // best-effort: a malformed/broken/blocked image URL just means no image
+      // best-effort
     }
+  }
+  // Fallback to the user's uploaded photo.
+  if (!imageStored &&
+      typeof imageB64 === "string" && imageB64.length > 0 && imageB64.length < 4_000_000 &&
+      typeof imageMime === "string" && imageMime.startsWith("image/")) {
+    await setWineImage(wineId, imageB64, imageMime);
   }
   await db.insert(cellarItems).values({
     userId,
