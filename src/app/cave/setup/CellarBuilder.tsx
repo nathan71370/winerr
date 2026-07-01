@@ -69,7 +69,7 @@ export function CellarBuilder({ units }: { units: CubeRow[] }) {
           })}
         </div>
         <p style={{ fontSize: "var(--t-meta)", color: "var(--ink-mute)", marginTop: "var(--s-3)" }}>
-          Clique une case « + » pour poser un cube. Glisse un cube pour le déplacer / l'empiler. La rangée du bas est posée par terre.
+          Clique une case « + » pour poser un cube. Glisse un cube pour le déplacer / l’empiler. La rangée du bas est posée par terre.
         </p>
       </div>
 
