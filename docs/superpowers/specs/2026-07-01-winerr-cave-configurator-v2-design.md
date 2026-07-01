@@ -16,9 +16,9 @@ No data migration: nothing is placed in any deployed DB yet (`placements` shippe
 
 | Decision | Choice |
 |---|---|
-| **Diamond structure** | A diamond rack is `cols × rows` **cells**, each cell divided by a big X into **4 triangular bulk bins** (option B). Dimensionable exactly like the grid rack. |
-| **Diamond precision** | **Per triangle.** Each cell's 4 triangles are individually addressable (Haut/Droite/Bas/Gauche → N/E/S/O). |
-| **Compartment keys** | grid cell → `L{r}C{c}`; diamond triangle → `L{r}C{c}{d}` where `d ∈ {N,E,S,O}`. |
+| **Diamond structure** (REVISED — see §3a) | A diamond rack is a **cross-hatch lattice**: bins are **diamonds** (interior, each a bulk bin holding several bottles) and **triangles** (frame edges). Dimensionable via `cols × rows` divisions. (The earlier "grid of X-cells → 4 triangles per cell" was wrong: an interior diamond straddles 4 cells; corrected during implementation.) |
+| **Diamond precision** | **Per diamond (bulk).** One interior diamond = one compartment holding a quantity of bottles; edge/corner triangles are their own compartments. |
+| **Compartment keys** | grid cell → `L{r}C{c}`; diamond bin → `D{i}-{j}` for a lattice point (i,j) with `(i+j)` even (i∈0..cols, j∈0..rows). |
 | **Configurator** | A **visual grid builder** replaces the coordinate form. Cubes are placed on a front-elevation grid (columns = side-by-side, rows = stack level, bottom = floor). |
 | **Move** | **Drag-and-drop** a cube to another cell (HTML5 DnD). |
 | **AI photo import** | Deferred to a follow-up phase (a button placeholder is fine, or omit). |
@@ -30,10 +30,16 @@ Both rack kinds are now `cols × rows`. `storageUnits.cols`/`rows` are required 
 ### `src/cave/compartments.ts`
 `compartmentKeys(unit)` becomes:
 - grid: `L{r}C{c}` for r in 1..rows, c in 1..cols (unchanged).
-- diamond: `L{r}C{c}{d}` for r, c and d in `["N","E","S","O"]`.
+- diamond: `D{i}-{j}` for lattice points i∈0..cols, j∈0..rows with `(i+j)` even (row-major). See §3a.
 - `[]` if dimensions missing.
 
 `isValidCompartment` stays a membership check over `compartmentKeys`.
+
+### §3a — the cross-hatch diamond model (as built)
+Over the CUBE×CUBE front face, place lattice points `P(i,j) = (i·CUBE/cols, j·CUBE/rows)`. A diamond bin is centered at each **even-sum** point `(i+j) even`, with vertices at the 4 orthogonally-adjacent points, **clipped to the frame**:
+- interior points → a full diamond (bulk bin);
+- boundary points → the diamond clipped to a triangle (edge) or quarter-triangle (corner).
+These bins tile the frame exactly (verified: total area = CUBE², no gaps/overlaps for 2×3, 3×3, 4×4). `compartmentPolygon` computes the clipped polygon via Sutherland–Hodgman (`clipToFrame` in `iso.ts`). `CaveBoard` is unchanged — stroking each bin polygon draws the cross-hatch (only diagonals + frame, no interior H/V lines).
 
 ### `src/lib/validation.ts`
 `unitSchema`: `cols`/`rows` become **required** (coerced int, 1..20) for both kinds (drop the "diamond has no dims" allowance).
@@ -44,8 +50,8 @@ Both rack kinds are now `cols × rows`. `storageUnits.cols`/`rows` are required 
 ### `src/cave/iso.ts`
 `compartmentPolygon(unit, key, origin)`:
 - grid `L{r}C{c}` → the cell rectangle (unchanged).
-- diamond `L{r}C{c}{d}` → parse cell (r,c) → its rectangle → the triangle for direction `d` (N=top, E=right, S=bottom, O=left) meeting at the cell center.
-- `[]` for malformed/out-of-range keys.
+- diamond `D{i}-{j}` → the diamond quad centered at lattice point (i,j), clipped to the frame via `clipToFrame` (Sutherland–Hodgman). See §3a.
+- `[]` for malformed / odd-sum / out-of-range keys.
 
 ### `src/app/cave/CaveBoard.tsx`
 **No change** — it already loops `compartmentKeys(unit)` and draws `compartmentPolygon` generically; diamonds simply yield more (triangle) polygons. The shared triangle edges render the cross-hatch/X pattern automatically.
