@@ -34,8 +34,9 @@ export function boardSize(units: { gridX: number; gridY: number }[]): { width: n
 // Absolute SVG polygon for one compartment on the cube whose front-face top-left
 // is `origin`. grid "L{r}C{c}" → the cell rectangle; diamond "D{a}-{b}" → a small
 // diamond tiling the frame's inscribed diamond (rotated coords s=x+y, t=x-y; the
-// inscribed diamond is the square s∈[S/2,3S/2], t∈[-S/2,S/2]); "CTL"/"CTR"/"CBR"/
-// "CBL" → the 4 frame corners outside the inscribed diamond.
+// inscribed diamond is the square s∈[S/2,3S/2], t∈[-S/2,S/2]); "CTL1"/"CTL2"/
+// "CTR1"/"CTR2"/"CBR1"/"CBR2"/"CBL1"/"CBL2" → the 4 frame corners outside the
+// inscribed diamond, each split in two by the frame diagonal through that corner.
 // Returns [] for a key invalid for the unit's kind/dimensions.
 export function compartmentPolygon(unit: Unit, key: string, origin: Point): Point[] {
   const { x, y } = origin;
@@ -46,10 +47,14 @@ export function compartmentPolygon(unit: Unit, key: string, origin: Point): Poin
 
   if (unit.kind === "diamond") {
     const corners: Record<string, Array<[number, number]>> = {
-      CTL: [[0, 0], [S / 2, 0], [0, S / 2]],
-      CTR: [[S / 2, 0], [S, 0], [S, S / 2]],
-      CBR: [[S, S / 2], [S, S], [S / 2, S]],
-      CBL: [[0, S / 2], [S / 2, S], [0, S]],
+      CTL1: [[0, 0], [S / 2, 0], [S / 4, S / 4]],
+      CTL2: [[0, 0], [S / 4, S / 4], [0, S / 2]],
+      CTR1: [[S / 2, 0], [S, 0], [3 * S / 4, S / 4]],
+      CTR2: [[S, 0], [S, S / 2], [3 * S / 4, S / 4]],
+      CBR1: [[S, S / 2], [S, S], [3 * S / 4, 3 * S / 4]],
+      CBR2: [[S, S], [S / 2, S], [3 * S / 4, 3 * S / 4]],
+      CBL1: [[S / 2, S], [0, S], [S / 4, 3 * S / 4]],
+      CBL2: [[0, S], [0, S / 2], [S / 4, 3 * S / 4]],
     };
     if (corners[key]) return corners[key].map(([px, py]) => ({ x: x + px, y: y + py }));
     const m = /^D(\d+)-(\d+)$/.exec(key);

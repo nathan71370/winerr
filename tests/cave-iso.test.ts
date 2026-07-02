@@ -32,14 +32,18 @@ describe("compartmentPolygon (diamond)", () => {
       { x: CUBE / 4, y: CUBE / 4 },
     ]);
   });
-  it("returns the top-left corner triangle", () => {
-    expect(compartmentPolygon(diamond, "CTL", { x: 0, y: 0 })).toEqual([
-      { x: 0, y: 0 }, { x: CUBE / 2, y: 0 }, { x: 0, y: CUBE / 2 },
+  it("returns the two halves of the top-left corner", () => {
+    expect(compartmentPolygon(diamond, "CTL1", { x: 0, y: 0 })).toEqual([
+      { x: 0, y: 0 }, { x: CUBE / 2, y: 0 }, { x: CUBE / 4, y: CUBE / 4 },
+    ]);
+    expect(compartmentPolygon(diamond, "CTL2", { x: 0, y: 0 })).toEqual([
+      { x: 0, y: 0 }, { x: CUBE / 4, y: CUBE / 4 }, { x: 0, y: CUBE / 2 },
     ]);
   });
   it("returns [] for an out-of-range or unknown diamond key", () => {
     expect(compartmentPolygon(diamond, "D2-0", { x: 0, y: 0 })).toEqual([]);
     expect(compartmentPolygon(diamond, "CZZ", { x: 0, y: 0 })).toEqual([]);
+    expect(compartmentPolygon(diamond, "CTL", { x: 0, y: 0 })).toEqual([]);
   });
 });
 

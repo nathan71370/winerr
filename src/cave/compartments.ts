@@ -2,9 +2,11 @@
 // A "diamond" cell tiles the frame's inscribed diamond (the rotated square
 // whose vertices are the 4 edge-midpoints of the CUBE×CUBE front face) with
 // cols×rows small diamonds, plus 4 corner triangles (the frame corners
-// outside the inscribed diamond). Compartments are derived, never stored:
+// outside the inscribed diamond), each split in two by the frame diagonal
+// passing through that corner. Compartments are derived, never stored:
 // grid → "L{r}C{c}"; diamond → "D{a}-{b}" (a∈0..cols-1, b∈0..rows-1) then
-// the 4 corner triangles "CTL", "CTR", "CBR", "CBL".
+// the 8 corner half-triangles (each corner split by the frame diagonal)
+// "CTL1", "CTL2", "CTR1", "CTR2", "CBR1", "CBR2", "CBL1", "CBL2".
 export type Unit = {
   kind: "grid" | "diamond";
   cols: number | null;
@@ -18,11 +20,11 @@ export function compartmentKeys(unit: Unit): string[] {
   if (cols <= 0 || rows <= 0) return keys;
   if (unit.kind === "diamond") {
     // cols×rows small diamonds tiling the frame's inscribed diamond (row-major),
-    // then the 4 corner triangles.
+    // then the 8 corner half-triangles (each corner split by the frame diagonal).
     for (let b = 0; b < rows; b++) {
       for (let a = 0; a < cols; a++) keys.push(`D${a}-${b}`);
     }
-    keys.push("CTL", "CTR", "CBR", "CBL");
+    keys.push("CTL1", "CTL2", "CTR1", "CTR2", "CBR1", "CBR2", "CBL1", "CBL2");
     return keys;
   }
   for (let r = 1; r <= rows; r++) {
