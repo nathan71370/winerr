@@ -1,0 +1,54 @@
+// src/price/service.ts
+// Quote refresh orchestration. Mirrors src/catalog/drink-window.ts: never
+// throws, lazy db imports (safe to import when DATABASE_URL is unset).
+import { needsRefresh } from "./staleness";
+import { lookupPrice } from "./lookup";
+
+export function isPriceEnabled(): boolean {
+  return Boolean(process.env.TAVILY_API_KEY && process.env.MISTRAL_API_KEY);
+}
+
+export function refreshDays(): number {
+  const n = Number(process.env.PRICE_REFRESH_DAYS);
+  return Number.isFinite(n) && n >= 1 ? Math.round(n) : 30;
+}
+
+// Fetch + store a fresh quote for a wine, unless its latest snapshot is still
+// fresh. A failed lookup stores an EMPTY snapshot (estimate null, source
+// "none") so the attempt is timestamped and not retried before the next window.
+export async function refreshWinePrice(wineId: string): Promise<void> {
+  try {
+    if (!isPriceEnabled()) return;
+
+    const { desc, eq } = await import("drizzle-orm");
+    const { db } = await import("@/db");
+    const { wines, priceSnapshots } = await import("@/db/schema");
+
+    const wine = (await db.select().from(wines).where(eq(wines.id, wineId)).limit(1))[0];
+    if (!wine) return;
+
+    const latest = (await db
+      .select({ fetchedAt: priceSnapshots.fetchedAt })
+      .from(priceSnapshots)
+      .where(eq(priceSnapshots.wineId, wineId))
+      .orderBy(desc(priceSnapshots.fetchedAt))
+      .limit(1))[0];
+    if (!needsRefresh(latest?.fetchedAt ?? null, new Date(), refreshDays())) return;
+
+    const quote = await lookupPrice({ producer: wine.producer, cuvee: wine.cuvee, vintage: wine.vintage });
+    if (quote) {
+      await db.insert(priceSnapshots).values({
+        wineId,
+        estimate: String(quote.estimate),
+        low: quote.low != null ? String(quote.low) : null,
+        high: quote.high != null ? String(quote.high) : null,
+        currency: quote.currency,
+        source: quote.source,
+      });
+    } else {
+      await db.insert(priceSnapshots).values({ wineId, estimate: null, source: "none" });
+    }
+  } catch (e) {
+    console.error("[price] refresh failed", e);
+  }
+}
