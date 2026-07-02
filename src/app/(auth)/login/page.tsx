@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { signIn } from "@/auth/config";
-import { inputStyle, btnStyle } from "../_styles";
+import { inputStyle, btnStyle, labelStyle } from "../_styles";
 
 export default async function LoginPage({
   searchParams,
@@ -27,13 +28,17 @@ export default async function LoginPage({
     <main style={{ maxWidth: 360, margin: "10vh auto", padding: "var(--s-6)" }}>
       <h1 style={{ fontSize: "var(--t-h1)" }}>Se connecter</h1>
       <form action={login} style={{ display: "grid", gap: "var(--s-3)", marginTop: "var(--s-6)" }}>
-        <input name="email" type="email" placeholder="Email" required style={inputStyle} />
-        <input name="password" type="password" placeholder="Mot de passe" required style={inputStyle} />
-        {error && <p style={{ color: "var(--warn)", fontSize: "var(--t-small)" }}>Identifiants invalides.</p>}
+        <label style={labelStyle}>Email
+          <input name="email" type="email" placeholder="Email" required autoComplete="email" style={inputStyle} />
+        </label>
+        <label style={labelStyle}>Mot de passe
+          <input name="password" type="password" placeholder="Mot de passe" required autoComplete="current-password" style={inputStyle} />
+        </label>
+        {error && <p aria-live="polite" style={{ color: "var(--warn)", fontSize: "var(--t-small)" }}>Identifiants invalides.</p>}
         <button style={btnStyle}>Entrer</button>
       </form>
       <p style={{ marginTop: "var(--s-4)", fontSize: "var(--t-small)" }}>
-        Pas de compte ? <a href="/register">S’inscrire</a>
+        Pas de compte ? <Link href="/register">S’inscrire</Link>
       </p>
     </main>
   );
