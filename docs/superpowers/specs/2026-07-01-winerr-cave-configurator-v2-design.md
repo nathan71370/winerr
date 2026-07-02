@@ -16,9 +16,9 @@ No data migration: nothing is placed in any deployed DB yet (`placements` shippe
 
 | Decision | Choice |
 |---|---|
-| **Diamond structure** (REVISED — see §3a) | A diamond rack is a **cross-hatch lattice**: bins are **diamonds** (interior, each a bulk bin holding several bottles) and **triangles** (frame edges). Dimensionable via `cols × rows` divisions. (The earlier "grid of X-cells → 4 triangles per cell" was wrong: an interior diamond straddles 4 cells; corrected during implementation.) |
-| **Diamond precision** | **Per diamond (bulk).** One interior diamond = one compartment holding a quantity of bottles; edge/corner triangles are their own compartments. |
-| **Compartment keys** | grid cell → `L{r}C{c}`; diamond bin → `D{i}-{j}` for a lattice point (i,j) with `(i+j)` even (i∈0..cols, j∈0..rows). |
+| **Diamond structure** (REVISED ×2 — see §3a) | A diamond rack = **`cols × rows` small diamonds tiling the frame's inscribed diamond** (the rotated square on the 4 edge-midpoints) + **8 corner half-triangles** (each frame corner's triangle split in two by the main/anti diagonal through that corner — matching the user's real rack: 2×2 → 4 losanges + 2 triangles par extrémité). `cols × rows` = number of diamonds wide × tall. (Earlier attempts — "grid of X-cells → 4 triangles/cell", then "even-sum cross-hatch lattice" — were both rejected against the real rack.) |
+| **Diamond precision** | **Per diamond (bulk).** One diamond = one compartment holding a quantity of bottles; each corner half-triangle is its own compartment. |
+| **Compartment keys** | grid cell → `L{r}C{c}`; diamond bin → `D{a}-{b}` (a∈0..cols-1, b∈0..rows-1, row-major); corners → `CTL1,CTL2,CTR1,CTR2,CBR1,CBR2,CBL1,CBL2`. |
 | **Configurator** | A **visual grid builder** replaces the coordinate form. Cubes are placed on a front-elevation grid (columns = side-by-side, rows = stack level, bottom = floor). |
 | **Move** | **Drag-and-drop** a cube to another cell (HTML5 DnD). |
 | **AI photo import** | Deferred to a follow-up phase (a button placeholder is fine, or omit). |
@@ -35,11 +35,8 @@ Both rack kinds are now `cols × rows`. `storageUnits.cols`/`rows` are required 
 
 `isValidCompartment` stays a membership check over `compartmentKeys`.
 
-### §3a — the cross-hatch diamond model (as built)
-Over the CUBE×CUBE front face, place lattice points `P(i,j) = (i·CUBE/cols, j·CUBE/rows)`. A diamond bin is centered at each **even-sum** point `(i+j) even`, with vertices at the 4 orthogonally-adjacent points, **clipped to the frame**:
-- interior points → a full diamond (bulk bin);
-- boundary points → the diamond clipped to a triangle (edge) or quarter-triangle (corner).
-These bins tile the frame exactly (verified: total area = CUBE², no gaps/overlaps for 2×3, 3×3, 4×4). `compartmentPolygon` computes the clipped polygon via Sutherland–Hodgman (`clipToFrame` in `iso.ts`). `CaveBoard` is unchanged — stroking each bin polygon draws the cross-hatch (only diagonals + frame, no interior H/V lines).
+### §3a — the inscribed-diamond model (as built, final)
+In rotated coords `s = x+y`, `t = x−y`, the frame's **inscribed diamond** is the square `s∈[S/2, 3S/2]`, `t∈[−S/2, S/2]` (S = CUBE). It is tiled by `cols × rows` cells of pitch `S/cols × S/rows` in (s,t); each cell maps back (`x=(s+t)/2, y=(s−t)/2`) to one **diamond bin** `D{a}-{b}`. The remaining area (4 frame corners) is 8 fixed **half-triangles**: each corner triangle is bisected by the main (TL/BR) or anti (TR/BL) diagonal through that corner — e.g. `CTL1 = (0,0),(S/2,0),(S/4,S/4)`, `CTL2 = (0,0),(S/4,S/4),(0,S/2)`. Bins tile the frame exactly (verified: Σ areas = CUBE², diamonds = corners = CUBE²/2, for 2×2, 3×3, 2×3, 4×2). No clipping needed. `CaveBoard` unchanged — stroking each bin polygon draws the rack (diagonals only, no interior H/V lines). Builder hint: dims = « losanges (largeur × hauteur) ».
 
 ### `src/lib/validation.ts`
 `unitSchema`: `cols`/`rows` become **required** (coerced int, 1..20) for both kinds (drop the "diamond has no dims" allowance).
