@@ -61,6 +61,10 @@ export function CellarBuilder({ units }: { units: CubeRow[] }) {
                   onClick={() => { setAdding({ gridX: x, gridY: y }); setSelected(null); }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => drop(x, y)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Ajouter un cube en colonne ${x + 1}, niveau ${y + 1}`}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAdding({ gridX: x, gridY: y }); setSelected(null); } }}
                   style={{ height: CELL, border: "2px dashed var(--line)", borderRadius: 8, background: adding && adding.gridX === x && adding.gridY === y ? "var(--cream)" : "transparent", color: "var(--ink-mute)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}
                 >
                   +
