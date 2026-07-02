@@ -5,6 +5,9 @@ import { deleteBottleAction, markDrunkAction } from "@/cellar/actions";
 import { filterAndSort, filterOptions, type CellarParams } from "@/cellar/filters";
 import { drinkStatus } from "@/cellar/drink-status";
 import { RowRating } from "@/cellar/RowRating";
+import { latestSnapshots } from "@/price/queries";
+import { isPriceEnabled } from "@/price/service";
+import { cellarValue } from "@/price/valuation";
 
 export default async function CellarPage({
   searchParams,
@@ -24,6 +27,14 @@ export default async function CellarPage({
   const all = await listCellar(session.user.id);
   const bottles = filterAndSort(all, params);
   const options = filterOptions(all);
+  const inCellar = all.filter((b) => b.status === "in_cellar");
+  const snapshots = isPriceEnabled() ? await latestSnapshots([...new Set(inCellar.map((b) => b.wineId))]) : new Map();
+  const value = cellarValue(inCellar.map((b) => ({
+    quantity: b.quantity,
+    purchasePrice: b.purchasePrice != null ? Number(b.purchasePrice) : null,
+    estimate: snapshots.get(b.wineId)?.estimate ?? null,
+  })));
+  const fmtEur = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} €`;
   const year = new Date().getFullYear();
 
   return (
@@ -38,6 +49,22 @@ export default async function CellarPage({
           </form>
         </div>
       </header>
+
+      {value.estimated > 0 && (
+        <p style={{ marginTop: "var(--s-3)", fontSize: "var(--t-small)", color: "var(--ink-soft)" }}>
+          Valeur estimée : <b style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h3)", color: "var(--ink)" }}>{fmtEur(value.estimated)}</b>
+          {value.purchase > 0 && (
+            <>
+              {" "}· achat : {fmtEur(value.purchase)}
+              {value.deltaPct != null && (
+                <span style={{ marginLeft: "var(--s-2)", color: value.deltaPct >= 0 ? "var(--good)" : "var(--warn)", fontWeight: 600 }}>
+                  {value.deltaPct >= 0 ? "+" : ""}{value.deltaPct} %
+                </span>
+              )}
+            </>
+          )}
+        </p>
+      )}
 
       <form method="get" style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", marginTop: "var(--s-5)" }}>
         <select name="status" defaultValue={params.status} style={ctrl}>
