@@ -36,7 +36,7 @@ export function CubeForm({ unit, gridX, gridY, onSuccess }: { unit?: CubeRow; gr
         <input name="cols" type="number" min={1} max={20} defaultValue={unit?.cols ?? 4} style={{ ...inp, width: 64 }} aria-label="colonnes" />
         <span style={{ color: "var(--ink-mute)" }}>×</span>
         <input name="rows" type="number" min={1} max={20} defaultValue={unit?.rows ?? 4} style={{ ...inp, width: 64 }} aria-label="rangées" />
-        <span style={{ fontSize: "var(--t-meta)", color: "var(--ink-mute)" }}>{kind === "diamond" ? "cellules (× 4 triangles)" : "colonnes × rangées"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "var(--ink-mute)" }}>{kind === "diamond" ? "losanges (largeur × hauteur)" : "colonnes × rangées"}</span>
       </div>
 
       {state?.error && <p style={{ color: "var(--warn)", fontSize: "var(--t-small)" }}>{state.error}</p>}
