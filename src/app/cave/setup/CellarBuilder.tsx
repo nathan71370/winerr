@@ -78,13 +78,13 @@ export function CellarBuilder({ units }: { units: CubeRow[] }) {
         {adding ? (
           <>
             <h3 style={{ fontSize: "var(--t-h3)", marginBottom: "var(--s-3)" }}>Nouveau cube</h3>
-            <CubeForm gridX={adding.gridX} gridY={adding.gridY} onSuccess={() => setAdding(null)} />
+            <CubeForm key={`add-${adding.gridX}-${adding.gridY}`} gridX={adding.gridX} gridY={adding.gridY} onSuccess={() => setAdding(null)} />
             <button onClick={() => setAdding(null)} style={ghostBtn}>Annuler</button>
           </>
         ) : selectedUnit ? (
           <>
             <h3 style={{ fontSize: "var(--t-h3)", marginBottom: "var(--s-3)" }}>{selectedUnit.name}</h3>
-            <CubeForm unit={selectedUnit} onSuccess={() => setSelected(null)} />
+            <CubeForm key={selectedUnit.id} unit={selectedUnit} onSuccess={() => setSelected(null)} />
             <form action={deleteUnitAction} style={{ marginTop: "var(--s-3)" }}>
               <input type="hidden" name="unitId" value={selectedUnit.id} />
               <button style={{ ...ghostBtn, color: "var(--warn)", borderColor: "var(--line)" }}>Supprimer (les bouteilles reviennent « à ranger »)</button>
