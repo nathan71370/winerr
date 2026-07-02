@@ -3,6 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import { getWineWithBottles } from "@/cellar/queries";
 import { drinkStatus } from "@/cellar/drink-status";
 import { ReviewForm } from "./ReviewForm";
+import { latestSnapshots, priceHistory } from "@/price/queries";
+import { isPriceEnabled } from "@/price/service";
+import { gainLossPct } from "@/price/valuation";
+import { sparklinePoints } from "@/price/sparkline";
 
 export default async function WinePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -12,6 +16,12 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
   if (!data) notFound();
   const { wine, bottles, review } = data;
   const ds = drinkStatus(wine.drinkFrom, wine.drinkTo, new Date().getFullYear());
+
+  const priceEnabled = isPriceEnabled();
+  const snapshot = priceEnabled ? (await latestSnapshots([wine.id])).get(wine.id) ?? null : null;
+  const history = priceEnabled ? await priceHistory(wine.id) : [];
+  const spark = sparklinePoints(history.map((h) => h.estimate), 220, 36);
+  const fmtEur = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: n < 100 ? 2 : 0 })} €`;
 
   return (
     <main style={{ maxWidth: 640, margin: "0 auto", padding: "var(--s-7) var(--s-5)" }}>
@@ -45,6 +55,34 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
+      {priceEnabled && (
+        <div style={{ marginTop: "var(--s-4)", padding: "var(--s-5)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
+          <div style={{ fontSize: "var(--t-kicker)", textTransform: "uppercase", letterSpacing: 1.5, color: "var(--ink-mute)" }}>Cote estimée</div>
+          {snapshot?.estimate != null ? (
+            <div style={{ marginTop: "var(--s-2)" }}>
+              <span style={{ fontFamily: "var(--serif)", fontSize: "var(--t-h2)" }}>{fmtEur(snapshot.estimate)}</span>
+              {snapshot.low != null && snapshot.high != null && (
+                <span style={{ color: "var(--ink-mute)", fontSize: "var(--t-small)", marginLeft: "var(--s-2)" }}>
+                  ({fmtEur(snapshot.low)} – {fmtEur(snapshot.high)})
+                </span>
+              )}
+              <div style={{ color: "var(--ink-mute)", fontSize: "var(--t-meta)", marginTop: 4 }}>
+                estimé le {snapshot.fetchedAt.toLocaleDateString("fr-FR")}{snapshot.source && snapshot.source !== "none" ? ` · ${snapshot.source}` : ""}
+              </div>
+              {spark && (
+                <svg viewBox="0 0 220 36" width={220} height={36} style={{ marginTop: "var(--s-3)", display: "block" }} aria-label="Évolution de la cote">
+                  <polyline points={spark} fill="none" stroke="var(--accent)" strokeWidth={1.5} />
+                </svg>
+              )}
+            </div>
+          ) : (
+            <div style={{ marginTop: "var(--s-2)", color: "var(--ink-mute)", fontSize: "var(--t-small)" }}>
+              {snapshot ? "—" : "Cote en attente"}
+            </div>
+          )}
+        </div>
+      )}
+
       <h2 style={{ fontSize: "var(--t-h3)", marginTop: "var(--s-6)" }}>Mon avis</h2>
       <div style={{ marginTop: "var(--s-3)" }}>
         <ReviewForm
@@ -62,6 +100,15 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
             ×{b.quantity} · {b.status === "drunk" ? "bue" : "en cave"}
             {b.purchasePrice ? ` · ${b.purchasePrice} €` : ""}
             {b.purchaseDate ? ` · acheté le ${b.purchaseDate}` : ""}
+            {(() => {
+              const buy = b.purchasePrice != null ? Number(b.purchasePrice) : null;
+              const pct = buy != null && snapshot?.estimate != null ? gainLossPct(buy, snapshot.estimate) : null;
+              return pct != null ? (
+                <span style={{ marginLeft: "var(--s-2)", color: pct >= 0 ? "var(--good)" : "var(--warn)", fontWeight: 600 }}>
+                  {pct >= 0 ? "+" : ""}{pct} %
+                </span>
+              ) : null;
+            })()}
           </li>
         ))}
       </ul>
