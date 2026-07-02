@@ -2,8 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { createGeminiProvider } from "@/ai/gemini";
 
 function fakeFetch(payload: unknown, ok = true, status = 200) {
-  return vi.fn(async () =>
-    ({ ok, status, json: async () => payload }) as unknown as Response);
+  return vi.fn(
+    async (_url: string | URL | Request, _init?: RequestInit) =>
+      ({ ok, status, json: async () => payload }) as unknown as Response,
+  );
 }
 
 const labelPayload = {
@@ -20,10 +22,10 @@ describe("createGeminiProvider.identifyLabel", () => {
     const out = await p.identifyLabel("BASE64DATA", "image/jpeg");
     expect(out.producer).toBe("Château Margaux");
     expect(out.vintage).toBe(2015);
-    const url = (fetchFn.mock.calls[0][0] as string);
+    const url = String(fetchFn.mock.calls[0][0]);
     expect(url).toContain("gemini-2.0-flash:generateContent");
     expect(url).toContain("key=KEY123");
-    const body = JSON.parse((fetchFn.mock.calls[0][1] as RequestInit).body as string);
+    const body = JSON.parse(fetchFn.mock.calls[0][1]!.body as string);
     expect(body.contents[0].parts.some((pt: { inlineData?: unknown }) => pt.inlineData)).toBe(true);
   });
 

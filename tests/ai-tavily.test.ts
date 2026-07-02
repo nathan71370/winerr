@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { createTavilySearch } from "@/ai/tavily";
 
 function fakeFetch(payload: unknown, ok = true, status = 200) {
-  return vi.fn(async () => ({ ok, status, json: async () => payload }) as unknown as Response);
+  return vi.fn(
+    async (_url: string | URL | Request, _init?: RequestInit) =>
+      ({ ok, status, json: async () => payload }) as unknown as Response,
+  );
 }
 
 describe("createTavilySearch", () => {
@@ -12,9 +15,9 @@ describe("createTavilySearch", () => {
     const out = await search("Bourgueil Les Perrières 2021", 5);
     expect(out).toHaveLength(1);
     expect(out[0]).toEqual({ title: "T", url: "https://u", content: "C" });
-    const url = fetchFn.mock.calls[0][0] as string;
+    const url = String(fetchFn.mock.calls[0][0]);
     expect(url).toContain("api.tavily.com/search");
-    const body = JSON.parse((fetchFn.mock.calls[0][1] as RequestInit).body as string);
+    const body = JSON.parse(fetchFn.mock.calls[0][1]!.body as string);
     expect(body.api_key).toBe("TKEY");
     expect(body.query).toContain("Bourgueil");
     expect(body.max_results).toBe(5);

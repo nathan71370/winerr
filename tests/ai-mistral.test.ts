@@ -2,8 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { createMistralProvider } from "@/ai/mistral";
 
 function fakeFetch(payload: unknown, ok = true, status = 200) {
-  return vi.fn(async () =>
-    ({ ok, status, json: async () => payload }) as unknown as Response);
+  return vi.fn(
+    async (_url: string | URL | Request, _init?: RequestInit) =>
+      ({ ok, status, json: async () => payload }) as unknown as Response,
+  );
 }
 
 const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
@@ -36,13 +38,13 @@ describe("createMistralProvider.identifyLabel", () => {
     expect(out.producer).toBe("Château Margaux");
     expect(out.vintage).toBe(2015);
 
-    const [url, init] = fetchFn.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(MISTRAL_ENDPOINT);
+    const [url, init] = fetchFn.mock.calls[0];
+    expect(String(url)).toBe(MISTRAL_ENDPOINT);
 
-    const headers = init.headers as Record<string, string>;
+    const headers = init!.headers as Record<string, string>;
     expect(headers["Authorization"]).toBe("Bearer MKEY123");
 
-    const body = JSON.parse(init.body as string);
+    const body = JSON.parse(init!.body as string);
     const userContent: { type: string; image_url?: string }[] =
       body.messages[0].content;
     const imagePart = userContent.find((p) => p.type === "image_url");
@@ -56,7 +58,7 @@ describe("createMistralProvider.identifyLabel", () => {
     const p = createMistralProvider({ apiKey: "K", fetchFn });
     await p.identifyLabel("x", "image/jpeg");
     const body = JSON.parse(
-      (fetchFn.mock.calls[0][1] as RequestInit).body as string,
+      fetchFn.mock.calls[0][1]!.body as string,
     );
     expect(body.model).toBe("pixtral-12b-latest");
   });
@@ -70,7 +72,7 @@ describe("createMistralProvider.identifyLabel", () => {
     });
     await p.identifyLabel("x", "image/jpeg");
     const body = JSON.parse(
-      (fetchFn.mock.calls[0][1] as RequestInit).body as string,
+      fetchFn.mock.calls[0][1]!.body as string,
     );
     expect(body.model).toBe("mistral-small-latest");
   });
@@ -179,7 +181,7 @@ describe("createMistralProvider.estimateDrinkWindow", () => {
       grapes: null,
     });
     const body = JSON.parse(
-      (fetchFn.mock.calls[0][1] as RequestInit).body as string,
+      fetchFn.mock.calls[0][1]!.body as string,
     );
     // Should be a single string message, not a content array with image parts
     const content = body.messages[0].content;
