@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { addBottleAction } from "@/cellar/actions";
 import { searchWinesAction } from "./search-action";
 import { identifyLabelAction } from "@/cellar/add/identify-action";
@@ -32,12 +32,24 @@ export default function AddBottlePage() {
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function onSearch(q: string) {
+  function onSearch(q: string) {
     set("producer", q);
-    setSuggestions(q.trim().length >= 2 ? await searchWinesAction(q) : []);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (q.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      setSuggestions(await searchWinesAction(q));
+    }, 300);
   }
   function pick(s: Suggestion) {
+    if (searchTimer.current) {
+      clearTimeout(searchTimer.current);
+      searchTimer.current = null;
+    }
     setForm((f) => ({
       ...f,
       producer: s.producer ?? s.displayName ?? "",

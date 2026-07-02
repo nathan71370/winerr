@@ -67,19 +67,19 @@ export default async function CellarPage({
       )}
 
       <form method="get" style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", marginTop: "var(--s-5)" }}>
-        <select name="status" defaultValue={params.status} style={ctrl}>
+        <select name="status" defaultValue={params.status} style={ctrl} aria-label="Statut">
           <option value="in_cellar">En cave</option>
           <option value="drunk">Bues</option>
         </select>
-        <select name="color" defaultValue={params.color ?? ""} style={ctrl}>
+        <select name="color" defaultValue={params.color ?? ""} style={ctrl} aria-label="Couleur">
           <option value="">Toutes couleurs</option>
           {options.colors.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select name="region" defaultValue={params.region ?? ""} style={ctrl}>
+        <select name="region" defaultValue={params.region ?? ""} style={ctrl} aria-label="Région">
           <option value="">Toutes régions</option>
           {options.regions.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select name="sort" defaultValue={params.sort} style={ctrl}>
+        <select name="sort" defaultValue={params.sort} style={ctrl} aria-label="Tri">
           <option value="recent">Récents</option>
           <option value="name">Nom</option>
           <option value="vintage">Millésime</option>
