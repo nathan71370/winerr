@@ -11,6 +11,7 @@ import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
 import { refreshWinePrice } from "@/price/service";
 import { reconcileItemPlacements } from "@/cave/actions";
+import { todayLocalISO } from "@/lib/dates";
 
 export async function addBottleAction(_prev: unknown, formData: FormData) {
   const userId = await requireUserId();
@@ -74,7 +75,7 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     wineId,
     quantity: d.quantity,
     purchasePrice: d.purchasePrice != null ? String(d.purchasePrice) : null,
-    purchaseDate: new Date().toISOString().slice(0, 10), // today
+    purchaseDate: todayLocalISO(),
   });
   // Fire-and-forget: estimate the drink window for this wine if not cached.
   // refreshDrinkWindow never throws; we intentionally don't await it so the

@@ -6,9 +6,10 @@ import { requireUserId } from "@/auth/require-user";
 import { snapRating } from "@/reviews/rating";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { todayLocalISO } from "@/lib/dates";
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayLocalISO();
 }
 
 // Quick-rate (stars only). Used by the cellar list and the detail star input.
