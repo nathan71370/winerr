@@ -42,3 +42,23 @@ describe("filterOptions", () => {
     expect(o.colors.sort()).toEqual(["blanc", "rouge"]);
   });
 });
+
+describe("window filter", () => {
+  const mk = (drinkFrom: number | null, drinkTo: number | null): CellarBottle => ({
+    itemId: "i", quantity: 1, purchasePrice: null, purchaseDate: null, status: "in_cellar",
+    wineId: "w", producer: "P", cuvee: null, vintage: null, region: null, color: null,
+    drinkFrom, drinkTo, rating: null,
+  });
+  it("keeps only wines matching the window status", () => {
+    const rows = [mk(2030, 2035), mk(2020, 2030), mk(2020, 2026), mk(2018, 2020)];
+    const out = filterAndSort(rows, { status: "in_cellar", sort: "recent", window: "ready", currentYear: 2026 });
+    expect(out).toHaveLength(1);
+    expect(out[0].drinkFrom).toBe(2020);
+    expect(out[0].drinkTo).toBe(2030);
+  });
+  it("excludes windowless wines when a window filter is set, keeps them otherwise", () => {
+    const rows = [mk(null, null), mk(2020, 2030)];
+    expect(filterAndSort(rows, { status: "in_cellar", sort: "recent", window: "ready", currentYear: 2026 })).toHaveLength(1);
+    expect(filterAndSort(rows, { status: "in_cellar", sort: "recent" })).toHaveLength(2);
+  });
+});

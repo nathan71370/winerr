@@ -1,3 +1,5 @@
+import { drinkStatus } from "./drink-status";
+
 export type CellarBottle = {
   itemId: string;
   producer: string | null;
@@ -20,6 +22,8 @@ export type CellarParams = {
   region?: string;
   status?: "in_cellar" | "drunk";
   sort?: "name" | "vintage" | "drink" | "recent" | "price" | "rating";
+  window?: "young" | "ready" | "soon" | "past";
+  currentYear?: number;
 };
 
 // Pure filter + sort over the user's bottles. Defaults: in-cellar, newest-first.
@@ -28,6 +32,10 @@ export function filterAndSort(rows: CellarBottle[], params: CellarParams): Cella
   let out = rows.filter((b) => b.status === status);
   if (params.color) out = out.filter((b) => b.color === params.color);
   if (params.region) out = out.filter((b) => b.region === params.region);
+  if (params.window) {
+    const year = params.currentYear ?? new Date().getFullYear();
+    out = out.filter((b) => drinkStatus(b.drinkFrom, b.drinkTo, year)?.key === params.window);
+  }
 
   const sort = params.sort ?? "recent";
   const cmp: Record<string, (a: CellarBottle, b: CellarBottle) => number> = {

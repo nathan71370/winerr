@@ -17,11 +17,13 @@ export default async function CellarPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const sp = await searchParams;
+  const windowKeys = ["young", "ready", "soon", "past"] as const;
   const params: CellarParams = {
     color: sp.color || undefined,
     region: sp.region || undefined,
     status: sp.status === "drunk" ? "drunk" : "in_cellar",
     sort: (sp.sort as CellarParams["sort"]) || "recent",
+    window: windowKeys.includes(sp.window as (typeof windowKeys)[number]) ? (sp.window as CellarParams["window"]) : undefined,
   };
 
   const all = await listCellar(session.user.id);
@@ -78,6 +80,13 @@ export default async function CellarPage({
         <select name="region" defaultValue={params.region ?? ""} style={ctrl} aria-label="Région">
           <option value="">Toutes régions</option>
           {options.regions.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select name="window" defaultValue={params.window ?? ""} style={ctrl} aria-label="Fenêtre de dégustation">
+          <option value="">Toutes fenêtres</option>
+          <option value="ready">À l’apogée</option>
+          <option value="soon">À boire vite</option>
+          <option value="young">Trop jeune</option>
+          <option value="past">Apogée passée</option>
         </select>
         <select name="sort" defaultValue={params.sort} style={ctrl} aria-label="Tri">
           <option value="recent">Récents</option>
