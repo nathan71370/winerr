@@ -30,7 +30,7 @@ export const wines = pgTable("wines", {
   drinkWindowFetchedAt: timestamp("drink_window_fetched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
-  uniqWine: unique("uniq_wine").on(t.producer, t.cuvee, t.vintage),
+  uniqWine: unique("uniq_wine").on(t.producer, t.cuvee, t.vintage).nullsNotDistinct(),
 }));
 
 export const lwinWines = pgTable("lwin_wines", {

@@ -43,6 +43,13 @@
       "when": 1782902038987,
       "tag": "0005_remarkable_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782974335820,
+      "tag": "0006_rainy_sphinx",
+      "breakpoints": true
     }
   ]
 }
