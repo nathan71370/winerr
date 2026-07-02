@@ -33,7 +33,7 @@ export default async function LoginPage({
         <button style={btnStyle}>Entrer</button>
       </form>
       <p style={{ marginTop: "var(--s-4)", fontSize: "var(--t-small)" }}>
-        Pas de compte ? <a href="/register">S'inscrire</a>
+        Pas de compte ? <a href="/register">S’inscrire</a>
       </p>
     </main>
   );

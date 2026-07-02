@@ -104,6 +104,7 @@ export default async function CellarPage({
             return (
               <li key={b.itemId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--s-4)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", minWidth: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- tiny DB-served thumbnail; no image optimizer on self-host */}
                   <img src={`/api/wine-image/${b.wineId}`} alt="" width={40} height={54}
                     style={{ objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--cream-deep)", flex: "none" }} />
                   <div>

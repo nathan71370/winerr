@@ -220,11 +220,11 @@ export default function AddBottlePage() {
             <input name="quantity" value={form.quantity} inputMode="numeric"
               onChange={(e) => set("quantity", e.target.value)} style={inp} />
           </label>
-          <label style={lbl}>Prix d'achat (€)
+          <label style={lbl}>Prix d’achat (€)
             <input name="purchasePrice" value={form.purchasePrice} inputMode="decimal"
               onChange={(e) => set("purchasePrice", e.target.value)} style={inp} />
           </label>
-          <p style={{ color: "var(--ink-mute)", fontSize: "var(--t-meta)" }}>Date d'achat : aujourd'hui (auto).</p>
+          <p style={{ color: "var(--ink-mute)", fontSize: "var(--t-meta)" }}>Date d’achat : aujourd’hui (auto).</p>
         </div>
         {state?.error && <p style={{ color: "var(--warn)", fontSize: "var(--t-small)" }}>{state.error}</p>}
         <button disabled={pending} style={btn}>{pending ? "…" : "Ajouter à ma cave"}</button>

@@ -32,6 +32,7 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
       <h1 style={{ fontSize: "var(--t-h1)", marginTop: "var(--s-3)" }}>
         {wine.producer}{wine.cuvee ? ` · ${wine.cuvee}` : ""}
       </h1>
+      {/* eslint-disable-next-line @next/next/no-img-element -- tiny DB-served thumbnail; no image optimizer on self-host */}
       <img src={`/api/wine-image/${wine.id}`} alt="" width={120} height={160}
         style={{ objectFit: "cover", borderRadius: "var(--radius)", border: "1px solid var(--line)", background: "var(--cream-deep)", marginTop: "var(--s-3)", display: "block" }} />
       <p style={{ color: "var(--ink-mute)", marginTop: "var(--s-2)" }}>

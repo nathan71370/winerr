@@ -3,6 +3,7 @@ import { createGeminiProvider } from "@/ai/gemini";
 
 function fakeFetch(payload: unknown, ok = true, status = 200) {
   return vi.fn(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- params exist only to give the fake a fetch-shaped signature
     async (_url: string | URL | Request, _init?: RequestInit) =>
       ({ ok, status, json: async () => payload }) as unknown as Response,
   );
