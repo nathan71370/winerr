@@ -5,19 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { cellarItems, wines } from "@/db/schema";
-import { auth } from "@/auth/config";
+import { requireUserId } from "@/auth/require-user";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
 import { refreshWinePrice } from "@/price/service";
 import { reconcileItemPlacements } from "@/cave/actions";
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  const id = session?.user?.id;
-  if (!id) redirect("/login");
-  return id;
-}
 
 export async function addBottleAction(_prev: unknown, formData: FormData) {
   const userId = await requireUserId();
@@ -155,15 +148,15 @@ export async function deleteBottleAction(formData: FormData) {
 export async function markDrunkAction(formData: FormData) {
   const userId = await requireUserId();
   const itemId = String(formData.get("itemId"));
-  // Decrement quantity; when it reaches 0, flip status to drunk.
+  // Decrement quantity; when it reaches 0, flip status to drunk. Single atomic
+  // UPDATE — no window where quantity is 0 but status hasn't caught up yet.
   await db
     .update(cellarItems)
-    .set({ quantity: sql`greatest(${cellarItems.quantity} - 1, 0)` })
+    .set({
+      quantity: sql`greatest(${cellarItems.quantity} - 1, 0)`,
+      status: sql`CASE WHEN ${cellarItems.quantity} - 1 <= 0 THEN 'drunk'::cellar_status ELSE ${cellarItems.status} END`,
+    })
     .where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId)));
-  await db
-    .update(cellarItems)
-    .set({ status: "drunk" })
-    .where(and(eq(cellarItems.id, itemId), eq(cellarItems.userId, userId), eq(cellarItems.quantity, 0)));
   await reconcileItemPlacements(userId, itemId);
   revalidatePath("/cellar");
   revalidatePath("/cave");

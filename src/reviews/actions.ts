@@ -2,17 +2,10 @@
 
 import { db } from "@/db";
 import { reviews } from "@/db/schema";
-import { auth } from "@/auth/config";
+import { requireUserId } from "@/auth/require-user";
 import { snapRating } from "@/reviews/rating";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  const id = session?.user?.id;
-  if (!id) redirect("/login");
-  return id;
-}
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
