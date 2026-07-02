@@ -29,6 +29,7 @@ export const addBottleSchema = z.object({
   // bottle fields
   quantity: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).default(1)),
   purchasePrice: z.preprocess(emptyToUndefined, z.coerce.number().min(0).optional()),
+  marketPriceEur: z.preprocess(emptyToUndefined, z.coerce.number().min(0.5).max(10000).optional()),
 });
 
 export type AddBottleInput = z.infer<typeof addBottleSchema>;

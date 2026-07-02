@@ -85,6 +85,21 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   // null and is recomputed on the next add of the same wine (a 2C backfill
   // sweep is the proper home for stragglers).
   void refreshDrinkWindow(wineId);
+  // Seed a quote from the enrichment result so refreshWinePrice's staleness
+  // gate skips a redundant Tavily+Mistral search seconds after the enrichment.
+  if (d.marketPriceEur != null) {
+    const { priceSnapshots } = await import("@/db/schema");
+    const existing = await db.select({ id: priceSnapshots.id }).from(priceSnapshots)
+      .where(eq(priceSnapshots.wineId, wineId)).limit(1);
+    if (existing.length === 0) {
+      await db.insert(priceSnapshots).values({
+        wineId,
+        estimate: String(d.marketPriceEur),
+        currency: "EUR",
+        source: "web-enrich",
+      });
+    }
+  }
   // Fire-and-forget: fetch a market quote if none is fresh (same caveat as above).
   void refreshWinePrice(wineId);
   revalidatePath("/cellar");

@@ -26,6 +26,7 @@ export default function AddBottlePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [drinkFrom, setDrinkFrom] = useState("");
   const [drinkTo, setDrinkTo] = useState("");
+  const [marketPriceEur, setMarketPriceEur] = useState("");
   const [form, setForm] = useState({
     producer: "", cuvee: "", vintage: "", region: "", country: "",
     color: "rouge", grapes: "", lwinCode: "", quantity: "1", purchasePrice: "",
@@ -67,6 +68,7 @@ export default function AddBottlePage() {
     if (en.imageUrl) setImageUrl(en.imageUrl);
     if (en.drinkFrom != null) setDrinkFrom(String(en.drinkFrom));
     if (en.drinkTo != null) setDrinkTo(String(en.drinkTo));
+    setMarketPriceEur(en.priceEur != null ? String(en.priceEur) : "");
     setEnrichMsg(en.description || "Infos enrichies depuis le web.");
   }
 
@@ -215,6 +217,7 @@ export default function AddBottlePage() {
         <input type="hidden" name="imageUrl" value={imageUrl} />
         <input type="hidden" name="drinkFrom" value={drinkFrom} />
         <input type="hidden" name="drinkTo" value={drinkTo} />
+        <input type="hidden" name="marketPriceEur" value={marketPriceEur} />
         <div style={{ borderTop: "1px dashed var(--line)", paddingTop: "var(--s-3)", display: "grid", gap: "var(--s-3)" }}>
           <label style={lbl}>Quantité
             <input name="quantity" value={form.quantity} inputMode="numeric"
