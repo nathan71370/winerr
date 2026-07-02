@@ -7,6 +7,7 @@ import { latestSnapshots, priceHistory } from "@/price/queries";
 import { isPriceEnabled } from "@/price/service";
 import { gainLossPct } from "@/price/valuation";
 import { sparklinePoints } from "@/price/sparkline";
+import { todayLocalISO } from "@/lib/dates";
 
 export default async function WinePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -90,7 +91,7 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
           wineId={wine.id}
           initialRating={review?.rating != null ? Number(review.rating) : null}
           initialNote={review?.tastingNote ?? ""}
-          initialDate={review?.tastedAt ?? new Date().toISOString().slice(0, 10)}
+          initialDate={review?.tastedAt ?? todayLocalISO()}
         />
       </div>
 

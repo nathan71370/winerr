@@ -29,7 +29,9 @@ export const addBottleSchema = z.object({
   // bottle fields
   quantity: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).default(1)),
   purchasePrice: z.preprocess(emptyToUndefined, z.coerce.number().min(0).optional()),
-  marketPriceEur: z.preprocess(emptyToUndefined, z.coerce.number().min(0.5).max(10000).optional()),
+  // Best-effort AI-extracted market price: an out-of-range/garbage value must
+  // NOT fail the whole form — it just gets dropped (catch → undefined).
+  marketPriceEur: z.preprocess(emptyToUndefined, z.coerce.number().min(0.5).max(10000).optional().catch(undefined)),
 });
 
 export type AddBottleInput = z.infer<typeof addBottleSchema>;

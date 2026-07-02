@@ -4,7 +4,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { cellarItems, wines } from "@/db/schema";
+import { cellarItems, wines, priceSnapshots } from "@/db/schema";
 import { requireUserId } from "@/auth/require-user";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
@@ -85,23 +85,29 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   // null and is recomputed on the next add of the same wine (a 2C backfill
   // sweep is the proper home for stragglers).
   void refreshDrinkWindow(wineId);
-  // Seed a quote from the enrichment result so refreshWinePrice's staleness
-  // gate skips a redundant Tavily+Mistral search seconds after the enrichment.
-  if (d.marketPriceEur != null) {
-    const { priceSnapshots } = await import("@/db/schema");
-    const existing = await db.select({ id: priceSnapshots.id }).from(priceSnapshots)
-      .where(eq(priceSnapshots.wineId, wineId)).limit(1);
-    if (existing.length === 0) {
-      await db.insert(priceSnapshots).values({
-        wineId,
-        estimate: String(d.marketPriceEur),
-        currency: "EUR",
-        source: "web-enrich",
-      });
+  // Fire-and-forget (same caveat as above): seed a quote from the enrichment
+  // result, THEN let refreshWinePrice's staleness gate skip the redundant
+  // Tavily+Mistral search. Sequenced in one chain so the seed lands before the
+  // gate reads it, without blocking the redirect.
+  void (async () => {
+    try {
+      if (d.marketPriceEur != null) {
+        const existing = await db.select({ id: priceSnapshots.id }).from(priceSnapshots)
+          .where(eq(priceSnapshots.wineId, wineId)).limit(1);
+        if (existing.length === 0) {
+          await db.insert(priceSnapshots).values({
+            wineId,
+            estimate: String(d.marketPriceEur),
+            currency: "EUR",
+            source: "web-enrich",
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[price] enrich seed failed", e);
     }
-  }
-  // Fire-and-forget: fetch a market quote if none is fresh (same caveat as above).
-  void refreshWinePrice(wineId);
+    await refreshWinePrice(wineId);
+  })();
   revalidatePath("/cellar");
   revalidatePath("/cave");
   redirect("/cellar");

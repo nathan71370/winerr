@@ -6,8 +6,6 @@ import { users } from "@/db/schema";
 import { verifyPassword } from "@/auth/password";
 import { loginSchema } from "@/lib/validation";
 
-if (!process.env.AUTH_SECRET) throw new Error("AUTH_SECRET is not set");
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },

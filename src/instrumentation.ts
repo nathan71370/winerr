@@ -4,6 +4,10 @@
 // the Node-only migration code (postgres driver) for the Node runtime, never edge.
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Fail fast at BOOT (never at build — the Docker builder stage has no
+    // runtime env) when a required secret is missing.
+    if (!process.env.AUTH_SECRET) throw new Error("AUTH_SECRET is not set");
+
     const { runMigrations } = await import("@/db/migrate");
     await runMigrations();
 
