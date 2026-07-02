@@ -31,50 +31,11 @@ export function boardSize(units: { gridX: number; gridY: number }[]): { width: n
   };
 }
 
-// Sutherland–Hodgman clip of a polygon to the axis-aligned square [0,S]×[0,S].
-function clipToFrame(poly: Point[], S: number): Point[] {
-  const edges: Array<(p: Point) => number> = [
-    (p) => p.x,
-    (p) => S - p.x,
-    (p) => p.y,
-    (p) => S - p.y,
-  ];
-  let out = poly;
-  for (const inside of edges) {
-    const input = out;
-    out = [];
-    for (let k = 0; k < input.length; k++) {
-      const cur = input[k];
-      const prev = input[(k + input.length - 1) % input.length];
-      const curIn = inside(cur) >= 0;
-      const prevIn = inside(prev) >= 0;
-      if (curIn) {
-        if (!prevIn) out.push(edgeIntersect(prev, cur, inside));
-        out.push(cur);
-      } else if (prevIn) {
-        out.push(edgeIntersect(prev, cur, inside));
-      }
-    }
-    if (out.length === 0) return [];
-  }
-  // A polygon vertex lying exactly on a clip line is emitted both as itself and
-  // as that edge's "intersection" point; collapse the resulting duplicates.
-  return out.filter((p, k) => {
-    const prev = out[(k + out.length - 1) % out.length];
-    return Math.abs(p.x - prev.x) > 1e-9 || Math.abs(p.y - prev.y) > 1e-9;
-  });
-}
-
-function edgeIntersect(a: Point, b: Point, inside: (p: Point) => number): Point {
-  const da = inside(a), db = inside(b);
-  const t = da / (da - db);
-  return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
-}
-
 // Absolute SVG polygon for one compartment on the cube whose front-face top-left
-// is `origin`. grid "L{r}C{c}" → the cell rectangle; diamond "D{i}-{j}" → the
-// cross-hatch diamond bin centered at lattice point (i,j), clipped to the frame
-// (a full diamond inside, a triangle on the boundary).
+// is `origin`. grid "L{r}C{c}" → the cell rectangle; diamond "D{a}-{b}" → a small
+// diamond tiling the frame's inscribed diamond (rotated coords s=x+y, t=x-y; the
+// inscribed diamond is the square s∈[S/2,3S/2], t∈[-S/2,S/2]); "CTL"/"CTR"/"CBR"/
+// "CBL" → the 4 frame corners outside the inscribed diamond.
 // Returns [] for a key invalid for the unit's kind/dimensions.
 export function compartmentPolygon(unit: Unit, key: string, origin: Point): Point[] {
   const { x, y } = origin;
@@ -84,19 +45,23 @@ export function compartmentPolygon(unit: Unit, key: string, origin: Point): Poin
   if (cols <= 0 || rows <= 0) return [];
 
   if (unit.kind === "diamond") {
+    const corners: Record<string, Array<[number, number]>> = {
+      CTL: [[0, 0], [S / 2, 0], [0, S / 2]],
+      CTR: [[S / 2, 0], [S, 0], [S, S / 2]],
+      CBR: [[S, S / 2], [S, S], [S / 2, S]],
+      CBL: [[0, S / 2], [S / 2, S], [0, S]],
+    };
+    if (corners[key]) return corners[key].map(([px, py]) => ({ x: x + px, y: y + py }));
     const m = /^D(\d+)-(\d+)$/.exec(key);
     if (!m) return [];
-    const i = Number(m[1]), j = Number(m[2]);
-    if (i < 0 || j < 0 || i > cols || j > rows || (i + j) % 2 !== 0) return [];
-    const w = S / cols, h = S / rows;
-    const cxL = i * w, cyL = j * h;
-    const quad: Point[] = [
-      { x: cxL, y: cyL - h },   // top
-      { x: cxL + w, y: cyL },   // right
-      { x: cxL, y: cyL + h },   // bottom
-      { x: cxL - w, y: cyL },   // left
+    const a = Number(m[1]), b = Number(m[2]);
+    if (a < 0 || b < 0 || a >= cols || b >= rows) return [];
+    const sw = S / cols, th = S / rows;
+    const s0 = S / 2 + a * sw, t0 = -S / 2 + b * th;
+    const stPts: Array<[number, number]> = [
+      [s0, t0], [s0 + sw, t0], [s0 + sw, t0 + th], [s0, t0 + th],
     ];
-    return clipToFrame(quad, S).map((p) => ({ x: x + p.x, y: y + p.y }));
+    return stPts.map(([s, t]) => ({ x: x + (s + t) / 2, y: y + (s - t) / 2 }));
   }
 
   const m = /^L(\d+)C(\d+)$/.exec(key);

@@ -23,26 +23,23 @@ describe("boardSize", () => {
 
 describe("compartmentPolygon (diamond)", () => {
   const diamond: Unit = { kind: "diamond", cols: 2, rows: 2 };
-  it("returns the full interior diamond for an even-sum interior point", () => {
-    const poly = compartmentPolygon(diamond, "D1-1", { x: 0, y: 0 });
+  it("returns a small diamond of the inscribed diamond", () => {
+    const poly = compartmentPolygon(diamond, "D0-0", { x: 0, y: 0 });
     expect(poly).toEqual([
-      { x: CUBE / 2, y: 0 }, { x: CUBE, y: CUBE / 2 }, { x: CUBE / 2, y: CUBE }, { x: 0, y: CUBE / 2 },
+      { x: 0, y: CUBE / 2 },
+      { x: CUBE / 4, y: (3 * CUBE) / 4 },
+      { x: CUBE / 2, y: CUBE / 2 },
+      { x: CUBE / 4, y: CUBE / 4 },
     ]);
   });
-  it("returns [] for an odd-sum or out-of-range diamond key", () => {
-    expect(compartmentPolygon(diamond, "D1-0", { x: 0, y: 0 })).toEqual([]);
-    expect(compartmentPolygon(diamond, "D3-1", { x: 0, y: 0 })).toEqual([]);
+  it("returns the top-left corner triangle", () => {
+    expect(compartmentPolygon(diamond, "CTL", { x: 0, y: 0 })).toEqual([
+      { x: 0, y: 0 }, { x: CUBE / 2, y: 0 }, { x: 0, y: CUBE / 2 },
+    ]);
   });
-  it("clips a corner bin to a triangle inside the frame", () => {
-    const poly = compartmentPolygon(diamond, "D0-0", { x: 0, y: 0 });
-    expect(poly.length).toBeGreaterThanOrEqual(3);
-    expect(poly.length).toBeLessThanOrEqual(4);
-    for (const p of poly) {
-      expect(p.x).toBeGreaterThanOrEqual(0);
-      expect(p.x).toBeLessThanOrEqual(CUBE);
-      expect(p.y).toBeGreaterThanOrEqual(0);
-      expect(p.y).toBeLessThanOrEqual(CUBE);
-    }
+  it("returns [] for an out-of-range or unknown diamond key", () => {
+    expect(compartmentPolygon(diamond, "D2-0", { x: 0, y: 0 })).toEqual([]);
+    expect(compartmentPolygon(diamond, "CZZ", { x: 0, y: 0 })).toEqual([]);
   });
 });
 
