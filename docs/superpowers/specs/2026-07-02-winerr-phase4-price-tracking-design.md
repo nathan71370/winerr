@@ -71,6 +71,7 @@ One sober line under the header, only when at least one wine has a quote:
 ## 8. Out of scope / deferred
 
 - Manual price entry (excluded by requirement), paid pricing APIs, currency conversion, price alerts/notifications, pruning old snapshots, per-user quotes (quotes are catalog-level, mutualized by design).
+- **Known inefficiency (from integration review, accepted):** adding a bottle via the enrichment flow spends 2 Tavily searches (enrichment finds a `priceEur` that only prefills the purchase field; `refreshWinePrice` then re-searches for the quote). Negligible at single-user scale; possible follow-up: seed a snapshot from the enrichment result instead of re-searching.
 
 ## 9. Config
 
