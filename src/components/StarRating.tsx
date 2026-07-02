@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { starFills } from "@/reviews/rating";
+import { snapRating, starFills } from "@/reviews/rating";
 
 // Half-star aware star rating. Read-only by default; pass onRate to make it
 // interactive (click the left half of a star for X.5, the right half for X).
@@ -24,6 +24,17 @@ export function StarRating({
     onRate(index + (leftHalf ? 0.5 : 1));
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLSpanElement>) {
+    if (!onRate) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+      e.preventDefault();
+      onRate(snapRating((value ?? 0) + 0.5));
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+      e.preventDefault();
+      onRate(snapRating((value ?? 0.5) - 0.5));
+    }
+  }
+
   const wrap: CSSProperties = {
     display: "inline-flex",
     gap: 2,
@@ -33,7 +44,24 @@ export function StarRating({
   };
 
   return (
-    <span style={wrap} aria-label={value != null ? `${value} sur 5` : "non noté"}>
+    <span
+      style={wrap}
+      aria-label={
+        interactive
+          ? value != null
+            ? `Note ${value} sur 5`
+            : "Noter ce vin"
+          : value != null
+            ? `${value} sur 5`
+            : "non noté"
+      }
+      role={interactive ? "slider" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-valuemin={interactive ? 0.5 : undefined}
+      aria-valuemax={interactive ? 5 : undefined}
+      aria-valuenow={interactive ? (value ?? 0) : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
+    >
       {fills.map((f, i) => (
         <span
           key={i}
