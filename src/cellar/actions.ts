@@ -9,6 +9,7 @@ import { auth } from "@/auth/config";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
+import { refreshWinePrice } from "@/price/service";
 import { reconcileItemPlacements } from "@/cave/actions";
 
 async function requireUserId(): Promise<string> {
@@ -90,6 +91,8 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   // null and is recomputed on the next add of the same wine (a 2C backfill
   // sweep is the proper home for stragglers).
   void refreshDrinkWindow(wineId);
+  // Fire-and-forget: fetch a market quote if none is fresh (same caveat as above).
+  void refreshWinePrice(wineId);
   revalidatePath("/cellar");
   revalidatePath("/cave");
   redirect("/cellar");
