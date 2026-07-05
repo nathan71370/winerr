@@ -74,3 +74,13 @@ export interface AIProvider {
   identifyLabel(imageBase64: string, mimeType: string): Promise<LabelExtraction>;
   estimateDrinkWindow(wine: WineForWindow): Promise<DrinkWindow | null>;
 }
+
+// Per-account AI configuration: which provider + which encrypted-at-rest keys
+// the acting user has configured in /settings. Replaces instance-wide AI env
+// vars — every AI call site now takes this explicitly instead of reading env.
+export type AIConfig = {
+  provider: "mistral" | "gemini";
+  mistralApiKey?: string | null;
+  geminiApiKey?: string | null;
+  tavilyApiKey?: string | null;
+};

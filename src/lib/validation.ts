@@ -65,3 +65,14 @@ export const unplaceSchema = z.object({
   quantity: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).optional()),
 });
 export type UnplaceInput = z.infer<typeof unplaceSchema>;
+
+export const settingsSchema = z.object({
+  aiProvider: z.enum(["mistral", "gemini"]),
+  mistralApiKey: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+  geminiApiKey: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+  tavilyApiKey: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+  clearMistral: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+  clearGemini: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+  clearTavily: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+});
+export type SettingsInput = z.infer<typeof settingsSchema>;
