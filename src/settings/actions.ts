@@ -15,7 +15,10 @@ export async function saveSettingsAction(_prev: unknown, formData: FormData) {
   if (!parsed.success) return { error: "Réglages invalides." };
   const d = parsed.data;
 
-  const enc = (v: string | undefined) => (v ? encryptSecret(v.trim()) : undefined);
+  const enc = (v: string | undefined) => {
+    const t = v?.trim();
+    return t ? encryptSecret(t) : undefined; // whitespace-only → not a key
+  };
   const patch: Record<string, unknown> = { aiProvider: d.aiProvider, updatedAt: new Date() };
 
   if (d.clearMistral) {
