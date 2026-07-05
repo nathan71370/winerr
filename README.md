@@ -23,29 +23,27 @@ Built as a Docker image and run via Docker Compose (`compose.yaml`), managed thr
 
 Migrations run automatically on server boot (`src/instrumentation.ts`), so a fresh deploy self-applies the schema — no manual `pnpm db:migrate` step is needed (that command remains available for local development).
 
-## AI (optional)
-Photo label identification and drink-window estimates are powered by a swappable
-AI provider. Select it with the `AI_PROVIDER` environment variable (`gemini` or
-`mistral`; defaults to `gemini` when unset).
+## AI (per account)
+Photo label identification, web enrichment, drink-window estimates and market
+quotes run on **each user's own API keys**, configured in the app under
+**Réglages** (`/settings`) — not via environment variables. Keys are stored
+encrypted (AES-256-GCM derived from `AUTH_SECRET`).
 
-**EU users — use Mistral (recommended):** Gemini's free tier is unavailable in
-the EU under Google's Terms of Service. Mistral is a French provider with a free
-tier that is fully ToS-compliant in the EU.
+- **Provider — Mistral (free, recommended in the EU):** get a free key at
+  [console.mistral.ai](https://console.mistral.ai) (no card). Gemini is also
+  supported but its free tier is unavailable for EU-served apps (paid in
+  Europe); get a key at [Google AI Studio](https://aistudio.google.com).
+- **Tavily** (free, no card — [tavily.com](https://tavily.com)): required for
+  web enrichment and market quotes, together with a Mistral key.
 
-- Set `AI_PROVIDER=mistral` and `MISTRAL_API_KEY=<your key>` (get a free key at
-  [console.mistral.ai](https://console.mistral.ai)). The default vision model is
-  `pixtral-12b-latest`; override with `MISTRAL_MODEL` if needed.
+Without keys, an account still works fully for manual entry and name search —
+the photo/enrichment blocks link to `/settings` instead, and drink windows
+show "—". Market quotes are shared catalog data: once any account has produced
+a quote for a wine, every holder sees it. The background price refresher sweeps
+per user, quoting each user's in-cellar wines with their own keys
+(`PRICE_REFRESH_DAYS`, default 30, stays a global env setting).
 
-**Global / non-EU users:** Set `AI_PROVIDER=gemini` (or leave it unset) and
-`GEMINI_API_KEY=<your key>` (free tier from
-[Google AI Studio](https://aistudio.google.com)). Override the model with
-`GEMINI_MODEL` (default: `gemini-2.0-flash`).
-
-Without any key, the app still works fully for manual entry and name search;
-drink windows simply show "—".
-
-Web enrichment after a photo (or via the "Enrichir depuis le web" button) uses
-Tavily (free, no card required — set `TAVILY_API_KEY` at
-[tavily.com](https://tavily.com)) together with Mistral; it pre-fills
-region, grapes, description, and purchase price, and stores a product image
-when one is found.
+## Registration whitelist (optional)
+Set `REGISTER_EMAIL_WHITELIST` (comma-separated emails) to restrict who can
+create an account. Unset or empty = open registration. Existing accounts and
+login are never affected.
