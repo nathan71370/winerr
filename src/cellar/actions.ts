@@ -9,12 +9,14 @@ import { requireUserId } from "@/auth/require-user";
 import { addBottleSchema, updateBottleSchema } from "@/lib/validation";
 import { ensureWine } from "@/catalog/service";
 import { refreshDrinkWindow } from "@/catalog/drink-window";
-import { refreshWinePrice } from "@/price/service";
+import { refreshWinePrice, hasQuoteKeys } from "@/price/service";
 import { reconcileItemPlacements } from "@/cave/actions";
 import { todayLocalISO } from "@/lib/dates";
+import { getUserAIConfig } from "@/settings/queries";
 
 export async function addBottleAction(_prev: unknown, formData: FormData) {
   const userId = await requireUserId();
+  const aiConfig = await getUserAIConfig(userId);
   const parsed = addBottleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: "Champs invalides (le domaine et la couleur sont requis)." };
@@ -84,11 +86,13 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
   // serverless-safe. If the process restarts mid-estimate, the window stays
   // null and is recomputed on the next add of the same wine (a 2C backfill
   // sweep is the proper home for stragglers).
-  void refreshDrinkWindow(wineId);
+  void refreshDrinkWindow(wineId, aiConfig);
   // Fire-and-forget (same caveat as above): seed a quote from the enrichment
   // result, THEN let refreshWinePrice's staleness gate skip the redundant
   // Tavily+Mistral search. Sequenced in one chain so the seed lands before the
-  // gate reads it, without blocking the redirect.
+  // gate reads it, without blocking the redirect. The seed insert is
+  // unconditional (marketPriceEur came from enrichment, not a fresh lookup);
+  // refreshWinePrice itself only runs when the user has quote-capable keys.
   void (async () => {
     try {
       if (d.marketPriceEur != null) {
@@ -106,7 +110,7 @@ export async function addBottleAction(_prev: unknown, formData: FormData) {
     } catch (e) {
       console.error("[price] enrich seed failed", e);
     }
-    await refreshWinePrice(wineId);
+    if (hasQuoteKeys(aiConfig)) await refreshWinePrice(wineId, aiConfig);
   })();
   revalidatePath("/cellar");
   revalidatePath("/cave");
