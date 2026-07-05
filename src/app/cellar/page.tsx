@@ -5,8 +5,7 @@ import { deleteBottleAction, markDrunkAction } from "@/cellar/actions";
 import { filterAndSort, filterOptions, type CellarParams } from "@/cellar/filters";
 import { drinkStatus } from "@/cellar/drink-status";
 import { RowRating } from "@/cellar/RowRating";
-import { latestSnapshots, type Snapshot } from "@/price/queries";
-import { isPriceEnabled } from "@/price/service";
+import { latestSnapshots } from "@/price/queries";
 import { cellarValue } from "@/price/valuation";
 
 export default async function CellarPage({
@@ -30,7 +29,7 @@ export default async function CellarPage({
   const bottles = filterAndSort(all, params);
   const options = filterOptions(all);
   const inCellar = all.filter((b) => b.status === "in_cellar");
-  const snapshots = isPriceEnabled() ? await latestSnapshots([...new Set(inCellar.map((b) => b.wineId))]) : new Map<string, Snapshot>();
+  const snapshots = await latestSnapshots([...new Set(inCellar.map((b) => b.wineId))]);
   const value = cellarValue(inCellar.map((b) => ({
     quantity: b.quantity,
     purchasePrice: b.purchasePrice != null ? Number(b.purchasePrice) : null,

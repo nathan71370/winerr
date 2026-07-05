@@ -4,10 +4,11 @@ import { getWineWithBottles } from "@/cellar/queries";
 import { drinkStatus } from "@/cellar/drink-status";
 import { ReviewForm } from "./ReviewForm";
 import { latestSnapshots, priceHistory } from "@/price/queries";
-import { isPriceEnabled } from "@/price/service";
+import { hasQuoteKeys } from "@/price/service";
 import { gainLossPct } from "@/price/valuation";
 import { sparklinePoints } from "@/price/sparkline";
 import { todayLocalISO } from "@/lib/dates";
+import { getUserAIConfig } from "@/settings/queries";
 
 export default async function WinePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -18,9 +19,13 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
   const { wine, bottles, review } = data;
   const ds = drinkStatus(wine.drinkFrom, wine.drinkTo, new Date().getFullYear());
 
-  const priceEnabled = isPriceEnabled();
-  const snapshot = priceEnabled ? (await latestSnapshots([wine.id])).get(wine.id) ?? null : null;
-  const history = priceEnabled ? await priceHistory(wine.id) : [];
+  const viewerConfig = await getUserAIConfig(session.user.id);
+  const canQuote = hasQuoteKeys(viewerConfig);
+  // Snapshots are shared/catalog-level data — always load them (cheap), so the
+  // block renders for everyone once a quote exists. Only the "no snapshot yet"
+  // pending state is gated on the viewer's own quote-capable keys.
+  const snapshot = (await latestSnapshots([wine.id])).get(wine.id) ?? null;
+  const history = await priceHistory(wine.id);
   const spark = sparklinePoints(history.map((h) => h.estimate), 220, 36);
   const fmtEur = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: n < 100 ? 2 : 0 })} €`;
 
@@ -57,7 +62,7 @@ export default async function WinePage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      {priceEnabled && (
+      {(snapshot || canQuote) && (
         <div style={{ marginTop: "var(--s-4)", padding: "var(--s-5)", border: "1px solid var(--line)", borderRadius: "var(--radius)", background: "var(--card)" }}>
           <div style={{ fontSize: "var(--t-kicker)", textTransform: "uppercase", letterSpacing: 1.5, color: "var(--ink-mute)" }}>Cote estimée</div>
           {snapshot?.estimate != null ? (

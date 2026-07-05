@@ -11,17 +11,6 @@ export function hasQuoteKeys(config: AIConfig | null): config is AIConfig {
   return Boolean(config?.tavilyApiKey && config?.mistralApiKey);
 }
 
-// DEPRECATED interim shim (Batch 3): quotes are now per-account keys, so
-// there's no longer a single instance-wide "is price enabled" flag. This
-// keeps src/app/wine/[id]/page.tsx and src/app/cellar/page.tsx compiling
-// unchanged until Batch 4.2 replaces their gating with a per-viewer
-// hasQuoteKeys(viewerConfig) check + "snapshot exists → show" display logic.
-// Always true: snapshots are shared/catalog-level, so both pages should keep
-// reading them; this only preserves current display behavior in the interim.
-export function isPriceEnabled(): boolean {
-  return true;
-}
-
 export function refreshDays(): number {
   const n = Number(process.env.PRICE_REFRESH_DAYS);
   return Number.isFinite(n) && n >= 1 ? Math.round(n) : 30;
