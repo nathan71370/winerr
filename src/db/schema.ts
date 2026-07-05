@@ -114,3 +114,12 @@ export const placements = pgTable("placements", {
   byUnit: index("placements_unit_idx").on(t.unitId),
   uniqSlot: unique("uniq_placement_slot").on(t.cellarItemId, t.unitId, t.compartment),
 }));
+
+export const userSettings = pgTable("user_settings", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  aiProvider: text("ai_provider").notNull().default("mistral"),
+  mistralApiKey: text("mistral_api_key"),
+  geminiApiKey: text("gemini_api_key"),
+  tavilyApiKey: text("tavily_api_key"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
