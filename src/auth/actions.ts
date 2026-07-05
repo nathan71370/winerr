@@ -7,6 +7,7 @@ import { users } from "@/db/schema";
 import { hashPassword } from "@/auth/password";
 import { registerSchema } from "@/lib/validation";
 import { signIn } from "@/auth/config";
+import { isEmailAllowed } from "@/auth/whitelist";
 
 export async function registerAction(_prev: unknown, formData: FormData) {
   const parsed = registerSchema.safeParse({
@@ -18,6 +19,10 @@ export async function registerAction(_prev: unknown, formData: FormData) {
     return { error: "Champs invalides (email valide + mot de passe ≥ 8 caractères)." };
   }
   const { email, password, name } = parsed.data;
+
+  if (!isEmailAllowed(email, process.env.REGISTER_EMAIL_WHITELIST)) {
+    return { error: "Cette adresse n'est pas autorisée à s'inscrire." };
+  }
 
   const existing = (await db.select().from(users).where(eq(users.email, email)).limit(1))[0];
   if (existing) return { error: "Un compte existe déjà avec cet email." };
