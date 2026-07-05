@@ -1,15 +1,19 @@
 import { wineEnrichmentSchema, type WineEnrichment } from "./enrich-types";
 import { createTavilySearch } from "./tavily";
+import type { AIConfig } from "./types";
 
 // Best-effort web enrichment: Tavily search → Mistral JSON extraction. Returns
 // null (never throws) when keys are missing or nothing usable is found.
-export async function enrichWine(input: {
-  producer: string;
-  cuvee?: string | null;
-  vintage?: number | null;
-}): Promise<WineEnrichment | null> {
-  const tavilyKey = process.env.TAVILY_API_KEY;
-  const mistralKey = process.env.MISTRAL_API_KEY;
+export async function enrichWine(
+  input: {
+    producer: string;
+    cuvee?: string | null;
+    vintage?: number | null;
+  },
+  config: AIConfig,
+): Promise<WineEnrichment | null> {
+  const tavilyKey = config.tavilyApiKey;
+  const mistralKey = config.mistralApiKey;
   if (!tavilyKey || !mistralKey || !input.producer) return null;
 
   try {

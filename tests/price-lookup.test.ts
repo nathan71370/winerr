@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { priceEstimateSchema, lookupPrice } from "@/price/lookup";
+import type { AIConfig } from "@/ai/types";
 
 describe("priceEstimateSchema", () => {
   it("coerces French decimal strings and nulls unknowns", () => {
@@ -30,30 +31,23 @@ function fetchStub(tavilyBody: unknown, mistralContent: string | null): typeof f
 
 const wine = { producer: "Léoni", cuvee: null, vintage: 2019 };
 const tavilyOk = { results: [{ title: "Léoni 2019", url: "https://www.idealwine.com/x", content: "18,50 €" }] };
+const config: AIConfig = { provider: "mistral", tavilyApiKey: "t", mistralApiKey: "m" };
 
 describe("lookupPrice", () => {
-  const env = process.env;
   it("returns the parsed estimate with the top result's host as source", async () => {
-    process.env.TAVILY_API_KEY = "t";
-    process.env.MISTRAL_API_KEY = "m";
-    const q = await lookupPrice(wine, fetchStub(tavilyOk, JSON.stringify({ estimate: "18,50", low: 14, high: 22, currency: "EUR" })));
+    const q = await lookupPrice(wine, config, fetchStub(tavilyOk, JSON.stringify({ estimate: "18,50", low: 14, high: 22, currency: "EUR" })));
     expect(q).toEqual({ estimate: 18.5, low: 14, high: 22, currency: "EUR", source: "www.idealwine.com" });
   });
   it("returns null when Tavily finds nothing", async () => {
-    process.env.TAVILY_API_KEY = "t";
-    process.env.MISTRAL_API_KEY = "m";
-    expect(await lookupPrice(wine, fetchStub({ results: [] }, "{}"))).toBeNull();
+    expect(await lookupPrice(wine, config, fetchStub({ results: [] }, "{}"))).toBeNull();
   });
   it("returns null on Mistral failure or garbage", async () => {
-    process.env.TAVILY_API_KEY = "t";
-    process.env.MISTRAL_API_KEY = "m";
-    expect(await lookupPrice(wine, fetchStub(tavilyOk, null))).toBeNull();
-    expect(await lookupPrice(wine, fetchStub(tavilyOk, "not json"))).toBeNull();
-    expect(await lookupPrice(wine, fetchStub(tavilyOk, JSON.stringify({ estimate: null })))).toBeNull();
+    expect(await lookupPrice(wine, config, fetchStub(tavilyOk, null))).toBeNull();
+    expect(await lookupPrice(wine, config, fetchStub(tavilyOk, "not json"))).toBeNull();
+    expect(await lookupPrice(wine, config, fetchStub(tavilyOk, JSON.stringify({ estimate: null })))).toBeNull();
   });
   it("returns null without API keys", async () => {
-    delete process.env.TAVILY_API_KEY;
-    expect(await lookupPrice(wine, fetchStub(tavilyOk, "{}"))).toBeNull();
-    process.env = { ...env };
+    const noKeys: AIConfig = { provider: "mistral", tavilyApiKey: null, mistralApiKey: "m" };
+    expect(await lookupPrice(wine, noKeys, fetchStub(tavilyOk, "{}"))).toBeNull();
   });
 });

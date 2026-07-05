@@ -3,9 +3,23 @@
 // throws, lazy db imports (safe to import when DATABASE_URL is unset).
 import { needsRefresh } from "./staleness";
 import { lookupPrice } from "./lookup";
+import type { AIConfig } from "@/ai/types";
 
+// True when the config has both keys quote lookups need (Tavily search +
+// Mistral extraction). Narrows `AIConfig | null` to `AIConfig` for callers.
+export function hasQuoteKeys(config: AIConfig | null): config is AIConfig {
+  return Boolean(config?.tavilyApiKey && config?.mistralApiKey);
+}
+
+// DEPRECATED interim shim (Batch 3): quotes are now per-account keys, so
+// there's no longer a single instance-wide "is price enabled" flag. This
+// keeps src/app/wine/[id]/page.tsx and src/app/cellar/page.tsx compiling
+// unchanged until Batch 4.2 replaces their gating with a per-viewer
+// hasQuoteKeys(viewerConfig) check + "snapshot exists → show" display logic.
+// Always true: snapshots are shared/catalog-level, so both pages should keep
+// reading them; this only preserves current display behavior in the interim.
 export function isPriceEnabled(): boolean {
-  return Boolean(process.env.TAVILY_API_KEY && process.env.MISTRAL_API_KEY);
+  return true;
 }
 
 export function refreshDays(): number {
@@ -16,10 +30,9 @@ export function refreshDays(): number {
 // Fetch + store a fresh quote for a wine, unless its latest snapshot is still
 // fresh. A failed lookup stores an EMPTY snapshot (estimate null, source
 // "none") so the attempt is timestamped and not retried before the next window.
-export async function refreshWinePrice(wineId: string): Promise<void> {
+// Callers are expected to gate on hasQuoteKeys(config) before calling.
+export async function refreshWinePrice(wineId: string, config: AIConfig): Promise<void> {
   try {
-    if (!isPriceEnabled()) return;
-
     const { desc, eq } = await import("drizzle-orm");
     const { db } = await import("@/db");
     const { wines, priceSnapshots } = await import("@/db/schema");
@@ -35,7 +48,7 @@ export async function refreshWinePrice(wineId: string): Promise<void> {
       .limit(1))[0];
     if (!needsRefresh(latest?.fetchedAt ?? null, new Date(), refreshDays())) return;
 
-    const quote = await lookupPrice({ producer: wine.producer, cuvee: wine.cuvee, vintage: wine.vintage });
+    const quote = await lookupPrice({ producer: wine.producer, cuvee: wine.cuvee, vintage: wine.vintage }, config);
     if (quote) {
       await db.insert(priceSnapshots).values({
         wineId,

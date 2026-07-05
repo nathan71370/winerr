@@ -4,6 +4,7 @@
 // nothing is found, or the extraction is unusable. fetchFn is injectable for tests.
 import { z } from "zod";
 import { createTavilySearch } from "@/ai/tavily";
+import type { AIConfig } from "@/ai/types";
 
 const looseMoney = z.preprocess((v) => {
   if (v == null || v === "") return null;
@@ -30,10 +31,11 @@ export type PriceQuote = { estimate: number; low: number | null; high: number | 
 
 export async function lookupPrice(
   wine: { producer: string; cuvee?: string | null; vintage?: number | null },
+  config: AIConfig,
   fetchFn: typeof fetch = fetch,
 ): Promise<PriceQuote | null> {
-  const tavilyKey = process.env.TAVILY_API_KEY;
-  const mistralKey = process.env.MISTRAL_API_KEY;
+  const tavilyKey = config.tavilyApiKey;
+  const mistralKey = config.mistralApiKey;
   if (!tavilyKey || !mistralKey || !wine.producer) return null;
 
   try {
