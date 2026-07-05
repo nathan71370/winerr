@@ -44,6 +44,7 @@ export default async function CellarPage({
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1 style={{ fontSize: "var(--t-h1)" }}>Ma cave</h1>
         <div style={{ display: "flex", gap: "var(--s-4)", alignItems: "baseline" }}>
+          <a href="/settings" style={{ fontSize: "var(--t-small)" }}>Réglages</a>
           <a href="/cave" style={{ fontSize: "var(--t-small)" }}>Ma cave (3D)</a>
           <a href="/cellar/add" style={{ fontSize: "var(--t-small)" }}>+ Ajouter</a>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
