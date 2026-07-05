@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth/config";
 import { getAIProvider } from "@/ai";
+import { getUserAIConfig } from "@/settings/queries";
 import type { LabelExtraction } from "@/ai/types";
 
 export type IdentifyResult = { extraction: LabelExtraction } | { error: string };
@@ -13,8 +14,9 @@ export async function identifyLabelAction(
   const session = await auth();
   if (!session?.user?.id) return { error: "Non authentifié." };
 
-  const provider = getAIProvider();
-  if (!provider) return { error: "Identification IA non configurée (clé manquante). Saisis manuellement." };
+  const config = await getUserAIConfig(session.user.id);
+  const provider = getAIProvider(config);
+  if (!provider) return { error: "Configure tes clés IA dans les réglages." };
 
   if (!imageBase64 || !mimeType.startsWith("image/")) {
     return { error: "Image invalide." };

@@ -1,4 +1,5 @@
 import { getAIProvider } from "@/ai";
+import type { AIConfig } from "@/ai/types";
 
 const STALE_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
 
@@ -14,9 +15,9 @@ export function needsDrinkWindow(
 
 // Fire-and-forget: estimate + cache the drink window for a wine. No-op when the
 // provider is unconfigured or the window is fresh. Never throws (logs instead).
-export async function refreshDrinkWindow(wineId: string): Promise<void> {
+export async function refreshDrinkWindow(wineId: string, config: AIConfig | null): Promise<void> {
   try {
-    const provider = getAIProvider();
+    const provider = getAIProvider(config);
     if (!provider) return;
 
     // Lazy imports to avoid throwing at module-load time when DATABASE_URL is unset

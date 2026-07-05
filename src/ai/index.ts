@@ -1,24 +1,25 @@
 import { createGeminiProvider } from "./gemini";
 import { createMistralProvider } from "./mistral";
-import type { AIProvider } from "./types";
+import type { AIConfig, AIProvider } from "./types";
 
-function selectedProvider(): "gemini" | "mistral" {
-  return process.env.AI_PROVIDER === "mistral" ? "mistral" : "gemini";
+// Model names stay optional env overrides (matches the pre-refactor factory);
+// the providers themselves already default internally when no override is set.
+const MISTRAL_MODEL = process.env.MISTRAL_MODEL || undefined;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || undefined;
+
+export function isAIEnabled(config: AIConfig | null): boolean {
+  return !!getAIProvider(config);
 }
 
-export function isAIEnabled(): boolean {
-  return !!getAIProvider();
-}
-
-// Returns the configured AI provider, or null when its key is unset (the app
-// stays usable: manual entry + name search; drink windows show "—").
-export function getAIProvider(): AIProvider | null {
-  if (selectedProvider() === "mistral") {
-    const apiKey = process.env.MISTRAL_API_KEY;
-    if (!apiKey) return null;
-    return createMistralProvider({ apiKey, model: process.env.MISTRAL_MODEL });
+// Returns the provider selected by the acting user's config, or null when
+// unconfigured / the matching key is missing (the app stays usable: manual
+// entry + name search; drink windows show "—").
+export function getAIProvider(config: AIConfig | null): AIProvider | null {
+  if (!config) return null;
+  if (config.provider === "mistral") {
+    if (!config.mistralApiKey) return null;
+    return createMistralProvider({ apiKey: config.mistralApiKey, model: MISTRAL_MODEL });
   }
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  return createGeminiProvider({ apiKey, model: process.env.GEMINI_MODEL });
+  if (!config.geminiApiKey) return null;
+  return createGeminiProvider({ apiKey: config.geminiApiKey, model: GEMINI_MODEL });
 }
